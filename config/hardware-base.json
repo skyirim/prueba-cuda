@@ -1,0 +1,36 @@
+{
+  "status": "PENDING_SOURCE",
+  "source_document": {
+    "name": null,
+    "sha256": null,
+    "date": null,
+    "sections": []
+  },
+  "cpu": {
+    "architecture": null,
+    "physical_cores_min": null,
+    "logical_processors_min": null,
+    "ram_gib_min": null
+  },
+  "gpu": {
+    "vendor": "NVIDIA",
+    "devices_min": null,
+    "model": null,
+    "full_gpu_required": null,
+    "cuda_cores_fp32_min": null,
+    "sm_min": null,
+    "vram_mib_min": null,
+    "compute_capability_min": null
+  },
+  "software": {
+    "os": null,
+    "gcc": null,
+    "cuda_toolkit": null,
+    "nvidia_driver": null,
+    "abi": null
+  },
+  "portability": {
+    "same_cpu_binary_required": null,
+    "reference_tests": []
+  }
+}
