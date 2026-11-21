@@ -68,12 +68,15 @@ def validate(baseline: dict, inventory: dict | None) -> list[str]:
     for min_key, actual_key in [
         ("devices_min", "devices"),
         ("cuda_cores_fp32_min", "cuda_cores_fp32_verified"),
-        ("sm_min", "sm_visible"),
         ("vram_mib_min", "vram_mib"),
     ]:
         req, got = gpu.get(min_key), actual_gpu.get(actual_key)
         if positive(req) and (not positive(got) or got < req):
             errors.append(f"GPU {actual_key}={got} < minimo {req}.")
+    if gpu.get("require_sm_parity", False):
+        req, got = gpu.get("sm_min"), actual_gpu.get("sm_visible")
+        if positive(req) and (not positive(got) or got < req):
+            errors.append(f"GPU sm_visible={got} < minimo {req}.")
     try:
         if cc_tuple(actual_gpu.get("compute_capability")) < cc_tuple(gpu.get("compute_capability_min")):
             errors.append("Compute capability del destino inferior a la base.")

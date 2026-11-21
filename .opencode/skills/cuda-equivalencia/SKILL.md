@@ -13,3 +13,8 @@ description: Verifica y dimensiona hardware CPU/GPU Linux CUDA respecto a una m�
 6. Si cambia arquitectura CPU, recompilar binarios; si cambia compute capability, validar targets/driver y PTX con la guía NVIDIA.
 7. Contrastar logs y resultados con equipo base, medir tolerancias/rendimiento, documentar cualquier incompatibilidad; no afirmar garantía universal.
 8. Publicar informe de criterios cumplidos/incumplidos, evidencias y PR.
+
+
+## Baseline UCAM recibido
+
+La fuente técnica ya existe: [docs/hardware-base.md](../../../docs/hardware-base.md), hash SHA-256 documentado. Los mínimos verificables son 12 cores físicos CPU, 4.352 CUDA cores de 1 GPU NVIDIA completa, 31 GiB RAM y 11.264 MiB VRAM. Los 68 SM Turing no son un mínimo separado. El estado sigue DRAFT hasta ejecutar los programas C y CUDA en el servidor y certificar una AMI AWS y la portabilidad de fuentes para sm_75. Antes de cada nueva EC2 GPU es obligatoria selección de precio Spot en tiempo real: [docs/precio-en-arranque.md](../../../docs/precio-en-arranque.md).

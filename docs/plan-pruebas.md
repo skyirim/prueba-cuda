@@ -26,3 +26,8 @@ Las pruebas unitarias del gate validan el validador, **no la existencia de hardw
 - Tests reales de C/CUDA y datos representativos en base y nube; logs vinculados al commit, AMI y fecha.
 - Tests de fallos y destrucción ejecutados; resumen de costes reales.
 - Cambios en docs y README con evidencia; revisión de agente y revisión humana.
+
+
+## Comparación de SM y CUDA cores
+
+La RTX 2080 Ti UCAM tiene 68 SM con 64 núcleos FP32 por SM, total 4.352. NVIDIA L4 tiene 58 SM con 128 núcleos FP32 por SM, total 7.424. El requisito explícito son **4.352 CUDA cores**, no >=68 SM en todas las arquitecturas. Gate en scripts/check_baseline.py comprueba >=68 SM únicamente si `require_sm_parity=true` (no se exige ahora). Comparar pruebas reales de kernel sobre ambas tarjetas sigue obligatorio.
