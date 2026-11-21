@@ -100,18 +100,28 @@ def latest_quotes(ec2, types: list[str], now: datetime) -> dict[tuple[str, str],
 
 
 def select(baseline: dict, pools: list[dict], *,
-           session, now: datetime | None = None) -> dict:
+           session, now: datetime | None = None,
+           qualification: bool = False) -> dict:
     """No consume instantáneas históricas; consulta precio/cuota/CPU ACTUAL."""
     now = now or datetime.now(timezone.utc)
     if now.tzinfo is None:
         raise SelectionError("Hora UTC con zona horaria obligatoria.")
-    if baseline.get("status") != "VERIFIED":
+    if baseline.get("status") != "VERIFIED" and not qualification:
         raise SelectionError("Fuente hardware UCAM no certificada con pruebas reales.")
     if baseline["cpu"]["physical_cores_min"] < 12 or baseline["gpu"]["cuda_cores_fp32_min"] < 4352:
         raise SelectionError("Perfil debilita los mínimos UCAM; selección bloqueada.")
-    vetted = [p for p in pools if pool_certified(p)]
+    if qualification:
+        # Solo para un workflow_dispatch explícito, presupuesto acotado y
+        # resultado etiquetado NO CERTIFICADO. Nunca desde un push normal.
+        required = ("region", "zone", "instance_type", "ami_id", "subnet_id")
+        vetted = [p for p in pools if p.get("probe_allowed") is True
+                  and all(p.get(k) for k in required)
+                  and str(p["ami_id"]).startswith("ami-")
+                  and str(p["subnet_id"]).startswith("subnet-")]
+    else:
+        vetted = [p for p in pools if pool_certified(p)]
     if not vetted:
-        raise SelectionError("No hay pools/AMIs con pruebas CUDA y UCAM aprobadas.")
+        raise SelectionError("No hay pools permitidos en este modo.")
     regions = sorted({p["region"] for p in vetted})
     offers = []
     audited = []
@@ -165,7 +175,7 @@ def select(baseline: dict, pools: list[dict], *,
         "alternatives": offers[1:],
         "excluded": audited,
         "spot_capacity_guaranteed": False,
-        "mode": "read-only-plan-NOT-launched",
+        "mode": "qualification-plan-NOT-certified" if qualification else "approved-plan-NOT-launched",
     }
 
 
