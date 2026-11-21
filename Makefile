@@ -2,9 +2,11 @@ CC ?= cc
 NVCC ?= nvcc
 CFLAGS ?= -O2 -std=c11 -Wall -Wextra -Wpedantic -Werror
 NVCCFLAGS ?= -O2 -lineinfo
-# nvcc AWS >=12.2 para L4 sm_89. En el servidor UCAM, si nvcc es más
-# antiguo, pasar CUDA_GENCODE="-gencode arch=compute_75,code=sm_75".
-CUDA_GENCODE ?= -gencode arch=compute_75,code=sm_75 -gencode arch=compute_89,code=sm_89
+# Generar cubin nativo Turing y conservar PTX forward-compatible.
+# Cubins sm_75 y sm_89 solos no ejecutan sobre A10G (sm_86).
+# Para optimizar una GPU concreta se pueden anadir targets nativos,
+# manteniendo sm_75 para UCAM y PTX para los destinos posteriores.
+CUDA_GENCODE ?= -gencode arch=compute_75,code=sm_75 -gencode arch=compute_75,code=compute_75
 .PHONY: all test clean
 
 all: build/hello_c build/cuda_smoke

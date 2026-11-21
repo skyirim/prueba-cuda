@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "commit_comments": {},
+  "review_comments": {},
+  "issue_comments": {},
+  "note": "Para comentarios Codex sin hilo resoluble. Cada registro exige fix_commit_sha de 40 caracteres y evidence_url. Hilos PR requieren isResolved verdadero; no pueden omitirse con este fichero."
+}
