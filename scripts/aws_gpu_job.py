@@ -351,7 +351,9 @@ def run(args, session) -> int:
         for _ in range(4):
             plan = select(baseline, pools, session=session, qualification=args.mode == "qualify")
             choices = [plan["best"]] + plan["alternatives"]
-            remaining = [p for p in choices if (p["region"], p["zone"], p["type"]) not in tried]
+            remaining = [p for p in choices
+                         if (p["region"], p["zone"], p["type"]) not in tried
+                         and p["price_usd_h"] <= args.spot_ceiling]
             if not remaining:
                 raise SelectionError("No hay más ofertas Spot válidas tras reconsultar precios.")
             plan["best"] = remaining[0]
@@ -361,6 +363,10 @@ def run(args, session) -> int:
                     session, plan, args, profile, sg_id, run_id.replace("/", "-"), deadline)
                 break
             except Exception as exc:
+                # Si se sobrepasó la ventana de 60 s, reconsultar antes de lanzar.
+                if isinstance(exc, SelectionError) and "caducado" in str(exc):
+                    log("Cotización caducada: nueva consulta AWS antes de continuar.")
+                    continue
                 # Solo capacidad/precio, nunca errores IAM, configuración ni cuotas.
                 code = getattr(getattr(exc, "response", None), "get", lambda *_: {})("Error", {}).get("Code", "")
                 if code not in ("InsufficientInstanceCapacity", "SpotMaxPriceTooLow",
@@ -416,13 +422,22 @@ def run(args, session) -> int:
                 state["duration_seconds"] / 3600 * offer["price_usd_h"], 5)
             state["estimated_total_usd"] = round(
                 state["duration_seconds"] / 3600 * offer["estimated_total_usd_h"], 5)
+        termination_error = None
         if instance_id:
+            # Consola de EC2: diagnóstico incluso si SSM nunca arrancó.
+            try:
+                output = session.client("ec2", region_name=region).get_console_output(
+                    InstanceId=instance_id, Latest=True).get("Output") or ""
+                (outdir / "ec2-console.txt").write_text(output, encoding="utf-8")
+            except Exception as exc:
+                log(f"No se pudo capturar la consola EC2: {exc}")
             try:
                 terminate(session, instance_id, region)
                 state["terminated"] = True
             except Exception as exc:
                 log(f"ERROR DE LIMPIEZA: {exc}; watchdog ExpireAtEpoch sigue activo.")
                 state["termination_error"] = str(exc)
+                termination_error = exc
         write_json(state_path, state)
         summary = Path(os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"))
         with summary.open("a", encoding="utf-8") as file:
@@ -438,6 +453,8 @@ def run(args, session) -> int:
             file.write(f"- Etapa fallida: {state.get('failed_step', 'ninguna')}\n")
             file.write(f"- Logs: adjuntos en artefacto aws-gpu-{run_id.replace('/', '-')}\n")
         log("El precio estimado no constituye facturación real (EBS/IP/logs adicionales).")
+        if termination_error is not None and sys.exc_info()[0] is None:
+            raise RuntimeError("No se confirmó la terminación EC2; watchdog activo.") from termination_error
 
 
 def main() -> int:
