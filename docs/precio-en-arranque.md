@@ -43,3 +43,8 @@ Fuentes AWS:
 ## Fotografía del 21-11-2026 — NO UTILIZAR PARA LANZAMIENTO
 
 Oregón, con cuota Spot G/VT 126 vCPU en la consulta: gr6.8xlarge (16 cores CPU, L4 completa, 7.424 CUDA cores) **0,4929 USD/h** en us-west-2c; g7.4xlarge 0,7658; g6.8xlarge 0,8391; g5.8xlarge 0,8438. Es un resultado histórico del análisis; al arrancar se debe volver a preguntar AWS.
+
+
+## Integración de selección Spot por cada nueva EC2
+
+[scripts/aws_gpu_job.py](../scripts/aws_gpu_job.py) consulta en cada intento con select y verifica assert_fresh inmediatamente antes de RunInstances. Limita el precio Spot a 1,50 USD/h y el TTL a 35 minutos para prueba manual y 70 minutos para CI, sin relajar CPU/GPU UCAM. La calificación manual no aprueba una AMI ni cambia el baseline a VERIFIED. En CI automática solo admite pools formalmente certificados y comprobados en AWS y UCAM.

@@ -61,3 +61,14 @@ Cada push: validar formato/presencia y consistencia de documentación con CI bar
 ### CODEX-REVIEW-12 — separación de privilegios
 
 **Prohibido escribir GitHub Issues desde eventos `pull_request_review` o `pull_request_review_comment`**: los PR externos pueden recibir un GITHUB_TOKEN de solo lectura. La auditoría de esos eventos debe limitarse a lecturas y devolver check fallido cuando existan observaciones. La creación/cierre de incidencias se realiza únicamente en `codex-review-issue-sync.yml`, workflow independiente `workflow_run` que vuelve a consultar la API usando exclusivamente scripts de `main` (nunca ejecutando código, comandos ni artefactos de PR de terceros). Mantener pruebas de regresión que garanticen la separación de permisos.
+
+
+## AWS-GPU-13: ejecución GPU, logs completos y política fail-closed
+
+1. GitHub Actions debe ejecutar fases Linux de preparación, inventario, compilación C, compilación CUDA, ejecución y archivado en EC2 NVIDIA, registrar stdout/stderr y código de retorno de cada fase, e incorporar los resultados en artifacts de GitHub incluso ante errores.
+2. Antes de CADA RunInstances consultar tarifa Spot, cuota y hardware AWS actuales. Cumplir 12 cores CPU físicos, 4.352 CUDA cores de una GPU completa, 31 GiB RAM, 11.264 MiB VRAM, compatibilidad con la RTX 2080 Ti UCAM, TTL máximo 60 segundos para la elección y techo de coste definido.
+3. La calificación manual se ejecuta solo mediante workflow_dispatch y variable AWS_CUDA_PROBE_ENABLED=true, sin certificar automáticamente la referencia. Push solo funciona con AWS_CUDA_ENABLED=true, baseline VERIFIED y pools aprobados con pruebas reales.
+4. Acceder a AWS con OIDC temporal y rol restringido a main, sin claves permanentes y sin SSH público; la compilación EC2 se hace mediante Systems Manager. Guardar logs en S3 y CloudWatch y devolverlos a GitHub Actions.
+5. Terminar instancias en finally y en paso always; watchdog EventBridge/Lambda como protección independiente, y EBS DeleteOnTermination. Almacenar logs en GitHub con retención solicitada de 90 días, sujeto a límites del plan.
+6. No declarar desplegada ni probada la infraestructura hasta comprobar CloudFormation, configurar GitHub variables, verificar OIDC y ejecutar tests C/CUDA reales. Aplicar CODEX-REVIEW-12 antes de fusionar.
+7. Leer [Guía operativa](docs/aws-gpu-ci.md) y [Skill OpenCode](.opencode/skills/aws-cuda-ci/SKILL.md) antes de cambiar scripts, IAM, workflow o guardas de gasto.

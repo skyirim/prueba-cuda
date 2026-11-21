@@ -48,3 +48,8 @@ Entre recibir un job y pedir EC2, ejecutar selección fresca **inmediatamente an
 TTL máximo del plan 60 segundos. Revalidar en el instante de `RunInstances`; si expira reconsultar; ante rechazo Spot reconsultar y seleccionar otra opción sin degradar. Registrar cotización UTC exacta y AWS request IDs de los eventos de lanzamiento y limpieza. Recurso de control y máquina de desarrollo por SSH siguen la **misma regla**. [Implementación de referencia de selector](../infrastructure/select_gpu_spot.py).
 
 **Actualmente no existe un controlador en producción que haga RunInstances automáticamente**; el selector es un componente comprobable para incorporarlo a ese controlador.
+
+
+## 6. Nueva implementación AWS EC2 por Systems Manager
+
+La arquitectura inicial del documento describía un runner nativo self-hosted de GitHub con registro JIT y GitHub App, que todavía no está desplegado. La modalidad implementada como código en noviembre 2026 utiliza un job GitHub-hosted como controlador por OIDC y ejecuta C/CUDA realmente en EC2 con SSM. Exporta logs completos a S3 y CloudWatch, los imprime en GitHub Actions y los adjunta mediante upload-artifact. No requiere credenciales de administración de runners. Ver [Guía de AWS GPU CI](aws-gpu-ci.md).

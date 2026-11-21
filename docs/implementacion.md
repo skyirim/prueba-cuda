@@ -53,3 +53,8 @@
 - Después: prueba con solo 1 runner y tiempo máximo pequeño; monitorización.
 - Rollback: desactivar webhook/controlador, cancelar solicitudes, terminar instancias marcadas, desregistrar runners, revisar volúmenes/SG/secrets, conservar logs.
 - No se considera terminado hasta verificar ausencia de instancias, IP públicas, volúmenes huérfanos y cobros inesperados.
+
+
+## Fase implementada como artefactos reproducibles (pendiente de despliegue)
+
+Se añadieron [CloudFormation](../infrastructure/cloudformation/gpu-ci-base.json), [workflow GitHub](../.github/workflows/aws-gpu-ci.yml), [controlador Python](../scripts/aws_gpu_job.py) y [scripts Linux](../scripts/ci). Tras configurar OIDC, permisos, una AMI y pruebas de referencia, se podrán crear EC2 Spot bajo demanda con fases independientes de GCC/nvcc, ejecutar kernels reales, guardar registros íntegros, publicar artifacts y terminar automáticamente las VMs. El modo manual qualify permite comprobar la AMI sin habilitar push automático ni marcarla VERIFIED. El modo SSM no es un runner self-hosted de GitHub registrado. Para los pasos de activación, ver [docs/aws-gpu-ci.md](aws-gpu-ci.md).

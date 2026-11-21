@@ -1,0 +1,81 @@
+name: AWS GPU C CUDA — EC2 Spot y registros completos
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'qualify: validar AMI GPU manualmente; ci: compilación normal (requiere certificación)'
+        required: true
+        default: qualify
+        type: choice
+        options: [qualify, ci]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: aws-gpu-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  gpu-c-cuda:
+    name: Compilar y ejecutar C/CUDA en EC2 AWS
+    if: >-
+      (github.event_name == 'push' && vars.AWS_CUDA_ENABLED == 'true') ||
+      (github.event_name == 'workflow_dispatch' && inputs.mode == 'qualify' && vars.AWS_CUDA_PROBE_ENABLED == 'true') ||
+      (github.event_name == 'workflow_dispatch' && inputs.mode == 'ci' && vars.AWS_CUDA_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    env:
+      AWS_REGION: ${{ vars.AWS_GPU_REGION || 'us-west-2' }}
+      AWS_GPU_S3_BUCKET: ${{ vars.AWS_GPU_S3_BUCKET }}
+      AWS_GPU_INSTANCE_PROFILE: ${{ vars.AWS_GPU_INSTANCE_PROFILE }}
+      AWS_GPU_SECURITY_GROUP: ${{ vars.AWS_GPU_SECURITY_GROUP }}
+      AWS_GPU_VPC_ID: ${{ vars.AWS_GPU_VPC_ID }}
+      AWS_GPU_LOG_GROUP: ${{ vars.AWS_GPU_LOG_GROUP }}
+      AWS_CUDA_ENABLED: ${{ vars.AWS_CUDA_ENABLED }}
+      AWS_CUDA_PROBE_ENABLED: ${{ vars.AWS_CUDA_PROBE_ENABLED }}
+      GPU_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'ci' }}
+    steps:
+      - name: Checkout de main autorizado
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Obtener credenciales AWS temporales por OIDC
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_GPU_ROLE_ARN }}
+          role-session-name: cuda-${{ github.run_id }}
+          role-duration-seconds: 7200
+      - name: Instalar dependencias del controlador (GitHub-hosted)
+        run: python3 -m pip install --disable-pip-version-check 'boto3>=1.41,<2.0'
+      - name: Empaquetar fuentes del commit autorizado
+        run: git archive --format=tar.gz --output=source.tar.gz "$GITHUB_SHA"
+      - name: Seleccionar AWS Spot, compilar y ejecutar, recopilar logs
+        id: aws_job
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GPU_MODE" == "qualify" ]]; then
+            python3 -u scripts/aws_gpu_job.py --mode qualify --archive source.tar.gz --spot-ceiling 1.50 --ttl-minutes 35
+          else
+            python3 -u scripts/aws_gpu_job.py --mode ci --archive source.tar.gz --spot-ceiling 1.50 --ttl-minutes 70
+          fi
+      - name: Limpieza adicional de EC2 al finalizar o fallar
+        if: always()
+        shell: bash
+        run: |
+          python3 scripts/aws_gpu_job.py --cleanup
+      - name: Publicar logs, salida de cada paso y binarios en GitHub Actions
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: aws-gpu-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/aws-gpu/
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 6

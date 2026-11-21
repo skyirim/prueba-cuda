@@ -1,0 +1,621 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "prueba-cuda: GitHub OIDC, EC2 GPU via SSM, encrypted S3 logs, CloudWatch, no-ingress SG, TTL watchdog.",
+  "Parameters": {
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "VPC with internet egress for SSM and EC2"
+    },
+    "GitHubRepo": {
+      "Type": "String",
+      "Default": "skyirim/prueba-cuda",
+      "AllowedPattern": "[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"
+    },
+    "ExistingOidcArn": {
+      "Type": "String",
+      "Default": "",
+      "Description": "If GitHub OIDC provider already exists, pass its ARN; otherwise create one."
+    }
+  },
+  "Conditions": {
+    "CreateOidc": {
+      "Fn::Equals": [
+        {
+          "Ref": "ExistingOidcArn"
+        },
+        ""
+      ]
+    }
+  },
+  "Resources": {
+    "GithubOidc": {
+      "Type": "AWS::IAM::OIDCProvider",
+      "Condition": "CreateOidc",
+      "Properties": {
+        "Url": "https://token.actions.githubusercontent.com",
+        "ClientIdList": [
+          "sts.amazonaws.com"
+        ]
+      }
+    },
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "BucketName": {
+          "Fn::Sub": "${AWS::StackName}-${AWS::AccountId}-${AWS::Region}"
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "expire-run-artifacts",
+              "Status": "Enabled",
+              "Prefix": "runs/",
+              "ExpirationInDays": 7,
+              "NoncurrentVersionExpiration": {
+                "NoncurrentDays": 7
+              }
+            },
+            {
+              "Id": "abort-incomplete-uploads",
+              "Status": "Enabled",
+              "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 1
+              }
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "prueba-cuda"
+          }
+        ]
+      }
+    },
+    "BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "Bucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "DenyInsecureTransport",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:*",
+              "Resource": [
+                {
+                  "Fn::Sub": "arn:${AWS::Partition}:s3:::${Bucket}"
+                },
+                {
+                  "Fn::Sub": "arn:${AWS::Partition}:s3:::${Bucket}/*"
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "SsmLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Sub": "/prueba-cuda/${AWS::StackName}/ssm"
+        },
+        "RetentionInDays": 7
+      }
+    },
+    "GpuSg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "GroupDescription": "GPU CI no ingress; TLS 443 egress only (public AWS endpoints)",
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": "0.0.0.0/0",
+            "Description": "TLS 443 to AWS public SSM/S3/CloudWatch APIs and Ubuntu HTTPS mirrors; no other ports"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "prueba-cuda"
+          }
+        ]
+      }
+    },
+    "InstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Sub": "${AWS::StackName}-ec2-ssm"
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+          }
+        ],
+        "Policies": [
+          {
+            "PolicyName": "GpuS3AndCloudwatch",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject",
+                    "s3:PutObject"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:s3:::${Bucket}/runs/*"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "s3:ListBucket",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:s3:::${Bucket}"
+                  },
+                  "Condition": {
+                    "StringLike": {
+                      "s3:prefix": "runs/*"
+                    }
+                  }
+                },
+                {
+                  "Sid": "CWDiscoverGroups",
+                  "Effect": "Allow",
+                  "Action": "logs:DescribeLogGroups",
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "CWDiscoverStreams",
+                  "Effect": "Allow",
+                  "Action": "logs:DescribeLogStreams",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "SsmLogs",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Sid": "CWWriteStreams",
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "${SsmLogs.Arn}:*"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "InstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "InstanceRole"
+          }
+        ]
+      }
+    },
+    "GithubRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Sub": "${AWS::StackName}-github-oidc"
+        },
+        "MaxSessionDuration": 7200,
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Federated": {
+                  "Fn::If": [
+                    "CreateOidc",
+                    {
+                      "Fn::GetAtt": [
+                        "GithubOidc",
+                        "Arn"
+                      ]
+                    },
+                    {
+                      "Ref": "ExistingOidcArn"
+                    }
+                  ]
+                }
+              },
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Condition": {
+                "StringEquals": {
+                  "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+                  "token.actions.githubusercontent.com:sub": {
+                    "Fn::Sub": "repo:${GitHubRepo}:ref:refs/heads/main"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "GpuCIController",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "DiscoverCompute",
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:DescribeInstances",
+                    "ec2:DescribeInstanceTypes",
+                    "ec2:DescribeSpotPriceHistory",
+                    "ec2:DescribeImages",
+                    "ec2:DescribeSubnets",
+                    "ec2:DescribeVpcs",
+                    "ec2:DescribeSecurityGroups",
+                    "ec2:GetConsoleOutput",
+                    "ssm:DescribeInstanceInformation",
+                    "ssm:GetCommandInvocation",
+                    "ssm:ListCommandInvocations",
+                    "servicequotas:GetServiceQuota"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "LaunchTaggedGpuInstance",
+                  "Effect": "Allow",
+                  "Action": "ec2:RunInstances",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "aws:RequestTag/Project": "prueba-cuda",
+                      "aws:RequestTag/Mode": "ci",
+                      "ec2:InstanceType": [
+                        "g5.8xlarge",
+                        "g6.8xlarge",
+                        "gr6.8xlarge",
+                        "g7.4xlarge",
+                        "g6e.8xlarge"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "Sid": "RunWithApprovedComponents",
+                  "Effect": "Allow",
+                  "Action": "ec2:RunInstances",
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}::image/*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:subnet/*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:security-group/${GpuSg.GroupId}"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:network-interface/*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:volume/*"
+                    }
+                  ]
+                },
+                {
+                  "Sid": "TagCreatedInstance",
+                  "Effect": "Allow",
+                  "Action": "ec2:CreateTags",
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:volume/*"
+                    }
+                  ],
+                  "Condition": {
+                    "StringEquals": {
+                      "ec2:CreateAction": "RunInstances"
+                    }
+                  }
+                },
+                {
+                  "Sid": "TerminateProjectCi",
+                  "Effect": "Allow",
+                  "Action": "ec2:TerminateInstances",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "ec2:ResourceTag/Project": "prueba-cuda",
+                      "ec2:ResourceTag/Mode": "ci"
+                    }
+                  }
+                },
+                {
+                  "Sid": "SendSsmOnlyApprovedDocument",
+                  "Effect": "Allow",
+                  "Action": "ssm:SendCommand",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ssm:${AWS::Region}::document/AWS-RunShellScript"
+                  }
+                },
+                {
+                  "Sid": "SendSsmOnlyTaggedCIInstances",
+                  "Effect": "Allow",
+                  "Action": "ssm:SendCommand",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "ssm:resourceTag/Project": "prueba-cuda",
+                      "ssm:resourceTag/Mode": "ci"
+                    }
+                  }
+                },
+                {
+                  "Sid": "ReadWriteRunArtifacts",
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:DeleteObject"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:s3:::${Bucket}/runs/*"
+                  }
+                },
+                {
+                  "Sid": "ListRunArtifacts",
+                  "Effect": "Allow",
+                  "Action": "s3:ListBucket",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:s3:::${Bucket}"
+                  },
+                  "Condition": {
+                    "StringLike": {
+                      "s3:prefix": "runs/*"
+                    }
+                  }
+                },
+                {
+                  "Sid": "PassOnlyGpuInstanceRole",
+                  "Effect": "Allow",
+                  "Action": "iam:PassRole",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "InstanceRole",
+                      "Arn"
+                    ]
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "iam:PassedToService": "ec2.amazonaws.com"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "WatchdogRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          }
+        ],
+        "Policies": [
+          {
+            "PolicyName": "ExpireGpuCI",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "ec2:DescribeInstances",
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "ec2:TerminateInstances",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "ec2:ResourceTag/Project": "prueba-cuda",
+                      "ec2:ResourceTag/Mode": "ci"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Watchdog": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python3.12",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "WatchdogRole",
+            "Arn"
+          ]
+        },
+        "Timeout": 60,
+        "MemorySize": 128,
+        "Environment": {
+          "Variables": {
+            "PROJECT": "prueba-cuda"
+          }
+        },
+        "Code": {
+          "ZipFile": "import boto3, os, time, logging\nlog=logging.getLogger(__name__)\nlog.setLevel(logging.INFO)\ndef handler(event, context):\n    now=int(time.time())\n    ec2=boto3.client('ec2')\n    ids=[]\n    pages=ec2.get_paginator('describe_instances').paginate(Filters=[\n        {'Name':'tag:Project','Values':[os.environ['PROJECT']]},\n        {'Name':'tag:Mode','Values':['ci']},\n        {'Name':'instance-state-name','Values':['pending','running','stopped','stopping']}])\n    for page in pages:\n        for reservation in page.get('Reservations',[]):\n            for instance in reservation.get('Instances',[]):\n                tags={tag['Key']:tag['Value'] for tag in instance.get('Tags',[])}\n                deadline=tags.get('ExpireAtEpoch','0')\n                if deadline.isdecimal() and int(deadline)>0 and int(deadline)<=now:\n                    ids.append(instance['InstanceId'])\n    for index in range(0,len(ids),20):\n        ec2.terminate_instances(InstanceIds=ids[index:index+20])\n    log.info(\"Expired instance count: %d\",len(ids))\n    return {'expired':len(ids)}\n"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "prueba-cuda"
+          }
+        ]
+      }
+    },
+    "WatchdogRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "rate(5 minutes)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "Watchdog",
+                "Arn"
+              ]
+            },
+            "Id": "gpu-ci-watchdog"
+          }
+        ]
+      }
+    },
+    "WatchdogPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Watchdog"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "WatchdogRule",
+            "Arn"
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "GithubRoleArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "GithubRole",
+          "Arn"
+        ]
+      }
+    },
+    "BucketName": {
+      "Value": {
+        "Ref": "Bucket"
+      }
+    },
+    "InstanceProfileName": {
+      "Value": {
+        "Ref": "InstanceProfile"
+      }
+    },
+    "SecurityGroupId": {
+      "Value": {
+        "Fn::GetAtt": [
+          "GpuSg",
+          "GroupId"
+        ]
+      }
+    },
+    "SsmLogGroup": {
+      "Value": {
+        "Ref": "SsmLogs"
+      }
+    },
+    "WatchdogFunction": {
+      "Value": {
+        "Ref": "Watchdog"
+      }
+    },
+    "Region": {
+      "Value": {
+        "Ref": "AWS::Region"
+      }
+    }
+  }
+}
