@@ -7,6 +7,8 @@ from scripts.audit_codex_reviews import (
     valid_ack, commit_comment_findings,
 )
 
+from scripts.sync_codex_review_issues import synchronize, marker
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -62,6 +64,42 @@ class CodexReviewPolicyTests(unittest.TestCase):
         self.assertIn("arch=compute_75,code=compute_75", line)
         self.assertNotIn("code=sm_89", line)
         self.assertIn("$(CUDA_GENCODE)", makefile)
+
+    def test_sync_same_finding_twice_does_not_duplicate_or_close(self):
+        class FakeClient:
+            def __init__(self):
+                self.issues = []
+                self.calls = []
+            def list_issues(self, repo):
+                return self.issues
+            def request(self, method, path, payload):
+                self.calls.append((method, path, payload))
+                if method == 'POST':
+                    issue = {'number': len(self.issues) + 1,
+                             'html_url': 'https://github.com/skyirim/prueba-cuda/issues/100',
+                             'title': payload['title'], 'body': payload['body'], 'state': 'open'}
+                    self.issues.append(issue)
+                    return issue
+                if method == 'PATCH':
+                    self.issues[0].update(payload)
+                    return self.issues[0]
+                raise AssertionError('Unexpected request')
+        client = FakeClient()
+        finding = {'key': 'pr-3', 'title': 'PR #3',
+                   'url': 'https://github.com/skyirim/prueba-cuda/pull/3',
+                   'items': [{'kind': 'pr-thread', 'id': 'thread3',
+                              'url': 'https://github.com/skyirim/prueba-cuda/pull/3',
+                              'body': 'P1: falta PTX'}]}
+        payload = {'repo': 'skyirim/prueba-cuda', 'findings': [finding]}
+        first = synchronize(client, payload)
+        second = synchronize(client, payload)
+        self.assertEqual(len(first['created']), 1)
+        self.assertEqual(second['created'], [])
+        self.assertEqual(second['closed'], [])
+        self.assertEqual(len(client.issues), 1)
+        self.assertEqual(client.issues[0]['state'], 'open')
+        self.assertTrue(client.issues[0]['body'].startswith(marker('pr-3')))
+        self.assertEqual([call[0] for call in client.calls], ['POST'])
 
 
 if __name__ == "__main__":
