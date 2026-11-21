@@ -1,34 +1,11 @@
 name: Codex Review Sentinel
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
-  pull_request_review:
-    types: [submitted, edited, dismissed]
-  pull_request_review_comment:
-    types: [created, edited]
-  issue_comment:
-    types: [created, edited]
-  commit_comment:
-    types: [created]
   push:
     branches: [main]
-  schedule:
-    - cron: '17 6 * * *'
-  workflow_dispatch: {}
-
-permissions:
-  contents: read
-  pull-requests: read
-  issues: write
-
-concurrency:
-  group: codex-review-sentinel-${{ github.repository }}
-  cancel-in-progress: false
 
 jobs:
   audit-codex-reviews:
     runs-on: ubuntu-latest
     steps:
-      - name: Comprobar sintaxis del workflow
-        run: echo 'Estructura válida'
+      - run: echo 'Estructura valida'
