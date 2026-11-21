@@ -112,3 +112,11 @@ Se requiere separación entre entorno interactivo SSH y runner CI. El controlado
 | Garantía de portabilidad y equivalencia | **NO DEMOSTRADA** |
 
 **Última revisión documental:** 2026-11-21. Actualizar las evidencias y este estado al completar cada hito. Nunca convertir un pendiente en aprobado sin logs y pruebas enlazables.
+
+
+## 8. Vigilancia permanente (sin gasto AWS)
+
+- La Action [.github/workflows/maintenance.yml](.github/workflows/maintenance.yml) programa una **auditoría mensual**: comprueba si falta la ficha base y si los datos de [config/research-snapshot.json](config/research-snapshot.json) tienen más de 30 días; publica un resumen y crea una incidencia GitHub sin duplicarla si existe un aviso. No consulta tarifas en AWS de forma automática ni consume instancias.
+- [scripts/audit_maintenance.py](scripts/audit_maintenance.py) implementa el control temporal y el bloqueo de baseline. [docs/plan-pruebas.md](docs/plan-pruebas.md) define las pruebas de aceptación; [docs/registro.md](docs/registro.md) conserva el histórico.
+- [infrastructure/README.md](infrastructure/README.md) explica el estado del IaC: **todavía no desplegado**. Activar recursos de pago requiere equivalencia comprobada, AMI y presupuesto aprobado.
+- Los agentes OpenCode deben analizar las incidencias abiertas y proponer PRs con datos, fuentes y pruebas, no fingir que se corrigieron automáticamente.

@@ -1,0 +1,37 @@
+{
+  "captured_utc": "2026-11-21",
+  "source": "AWS EC2 DescribeSpotPriceHistory / EC2 DescribeInstanceTypes / Price List GetProducts / Service Quotas GetServiceQuota",
+  "region": "us-west-2",
+  "prices_usd_hour_observed": {
+    "g6f.large": {
+      "spot": 0.0565,
+      "zone": "us-west-2b",
+      "ondemand": 0.202
+    },
+    "g6f.xlarge": {
+      "spot": 0.0741,
+      "zone": "us-west-2c",
+      "ondemand": 0.2375
+    },
+    "g5g.xlarge": {
+      "spot": 0.1069,
+      "zone": "us-west-2a",
+      "ondemand": 0.42
+    },
+    "g4dn.xlarge": {
+      "spot": 0.2149,
+      "zone": "us-west-2c",
+      "ondemand": 0.526
+    }
+  },
+  "gpu_spot_vcpu_quota": {
+    "us-west-2": 126,
+    "sa-east-1": 0,
+    "us-east-1": 0,
+    "eu-central-1": 0
+  },
+  "maximum_age_days": 30,
+  "verified_gpu_cuda_runtime": false,
+  "actual_aws_resources_created": false,
+  "note": "Valores históricos observados; no predicen precio futuro ni capacidad Spot."
+}

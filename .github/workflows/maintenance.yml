@@ -1,0 +1,38 @@
+name: Vigilancia mensual de requisitos y tarifas
+
+on:
+  schedule:
+    - cron: "23 8 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Auditoria documental
+        run: |
+          python3 scripts/audit_maintenance.py --markdown > audit.md
+          cat audit.md >> "$GITHUB_STEP_SUMMARY"
+          cat audit.md
+      - name: Crear incidencia sin duplicados
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if grep -q '^ALERTA:' audit.md; then
+            title='[cuda-maintenance] Revisar baseline y precios AWS'
+            found="$(gh issue list -R "$GITHUB_REPOSITORY" --state open --limit 100 --json title --jq '.[] | select(.title=="[cuda-maintenance] Revisar baseline y precios AWS") | .title')"
+            if [[ -z "$found" ]]; then
+              gh issue create -R "$GITHUB_REPOSITORY" --title "$title" --body-file audit.md
+            else
+              echo "Incidencia de auditoria ya abierta: $found"
+            fi
+          fi
