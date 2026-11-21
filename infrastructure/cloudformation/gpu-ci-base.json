@@ -139,12 +139,14 @@
         "VpcId": {
           "Ref": "VpcId"
         },
-        "GroupDescription": "GPU CI ephemeral SSM outbound only (no inbound ports)",
+        "GroupDescription": "GPU CI no ingress; TLS 443 egress only (public AWS endpoints)",
         "SecurityGroupEgress": [
           {
-            "IpProtocol": "-1",
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
             "CidrIp": "0.0.0.0/0",
-            "Description": "HTTPS SSM S3 and package mirrors"
+            "Description": "TLS 443 to AWS public SSM/S3/CloudWatch APIs and Ubuntu HTTPS mirrors; no other ports"
           }
         ],
         "Tags": [
@@ -207,6 +209,24 @@
                   }
                 },
                 {
+                  "Sid": "CWDiscoverGroups",
+                  "Effect": "Allow",
+                  "Action": "logs:DescribeLogGroups",
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "CWDiscoverStreams",
+                  "Effect": "Allow",
+                  "Action": "logs:DescribeLogStreams",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "SsmLogs",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Sid": "CWWriteStreams",
                   "Effect": "Allow",
                   "Action": [
                     "logs:CreateLogStream",
@@ -373,17 +393,26 @@
                   }
                 },
                 {
-                  "Sid": "SendSsmCommand",
+                  "Sid": "SendSsmOnlyApprovedDocument",
                   "Effect": "Allow",
                   "Action": "ssm:SendCommand",
-                  "Resource": [
-                    {
-                      "Fn::Sub": "arn:${AWS::Partition}:ssm:${AWS::Region}::document/AWS-RunShellScript"
-                    },
-                    {
-                      "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ssm:${AWS::Region}::document/AWS-RunShellScript"
+                  }
+                },
+                {
+                  "Sid": "SendSsmOnlyTaggedCIInstances",
+                  "Effect": "Allow",
+                  "Action": "ssm:SendCommand",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "ssm:resourceTag/Project": "prueba-cuda",
+                      "ssm:resourceTag/Mode": "ci"
                     }
-                  ]
+                  }
                 },
                 {
                   "Sid": "ReadWriteRunArtifacts",
