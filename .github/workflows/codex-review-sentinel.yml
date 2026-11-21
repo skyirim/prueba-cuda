@@ -15,7 +15,7 @@ on:
     branches: [main]
   schedule:
     - cron: '17 6 * * *'
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -28,7 +28,6 @@ concurrency:
 
 jobs:
   audit-codex-reviews:
-    if: github.event_name != 'issue_comment' || github.event.issue.pull_request != null
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
