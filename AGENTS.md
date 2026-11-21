@@ -83,3 +83,8 @@ El 21/11/2026 la pila prueba-cuda-ci se desplegó con estado CREATE_COMPLETE, pe
 - Guardar evidencia de que CloudFormation está CREATE_COMPLETE y que no hay EC2 activas; no afirmar que se ha ejecutado GCC/nvcc o kernels.
 - Tras el desbloqueo, comprobar otra vez las cuotas, tarifas Spot en el preciso instante de cada arranque, roles y AMI; luego calificación manual con techo y TTL, logs y comparación real UCAM.
 - No escribir datos de cuenta sensibles en README, PRs, Issues ni logs. Exigir CODEX-REVIEW-12 al modificar infraestructura.
+
+
+## AWS-SAXPY-15 — prueba real en 3 entornos distintos
+
+La prueba [NVIDIA SAXPY 3×](docs/nvidia-saxpy-3x.md) debe verificar tres ID EC2 diferentes, compilaciones `nvcc`, tres ejecuciones reales con `SAXPY_NVIDIA_PASS`, stdout/stderr originales y eliminación efectiva de cada máquina. Usar selección Spot fresca por arranque, máximo 0,60 USD/h y 30 minutos por EC2. No repetir automáticamente un `Client.Blocked`: detener los ciclos, documentar el error y consultar con AWS Support. Los tests Python con datos simulados NO representan ejecuciones reales. La cuenta sigue bloqueada después del cambio de tarjeta el 21/11/2026. Aplicar CODEX-REVIEW-12 antes de fusionar.

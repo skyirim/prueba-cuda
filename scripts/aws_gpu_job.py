@@ -329,8 +329,15 @@ def run(args, session) -> int:
     baseline = load_json("config/hardware-base.json")
     pools = get_pools(session, args, baseline, sg_id, vpc_id)
     run_id = env_required("GITHUB_RUN_ID") + "/" + env_required("GITHUB_RUN_ATTEMPT")
+    iteration = os.environ.get("GPU_TEST_ITERATION", "").strip()
+    if iteration:
+        if iteration not in ("1", "2", "3"):
+            raise SelectionError("GPU_TEST_ITERATION debe ser 1, 2 o 3.")
+        run_id += "/saxpy-" + iteration
     prefix = "runs/" + run_id
     outdir = Path("artifacts/aws-gpu")
+    if iteration:
+        outdir = outdir / ("run-" + iteration)
     outdir.mkdir(parents=True, exist_ok=True)
     state_path = outdir / "state.json"
     state = {"mode": args.mode, "region": region, "started_at": stamp(),
@@ -471,7 +478,9 @@ def main() -> int:
         import boto3
         session = boto3.Session(region_name=os.environ.get("AWS_REGION", ALLOWED_REGION))
         if args.cleanup:
-            cleanup(session, Path("artifacts/aws-gpu/state.json"))
+            iteration = os.environ.get("GPU_TEST_ITERATION", "").strip()
+            state = Path("artifacts/aws-gpu") / ("run-" + iteration if iteration else "") / "state.json"
+            cleanup(session, state)
             return 0
         return run(args, session)
     except Exception as exc:

@@ -174,3 +174,10 @@ La respuesta vino de la propia API AWS y no significa falta de CPU/GPU ni insufi
 - [Guía de implantación y configuración de GitHub Actions](docs/aws-gpu-ci.md).
 
 **No volver a intentar lanzamientos EC2 hasta que AWS Support confirme que la cuenta está habilitada.** Los costes de infraestructura base no son equivalentes a una prueba GPU superada.
+
+
+## 13. NVIDIA SAXPY: tres ciclos de prueba independientes
+
+La [adaptación de NVIDIA SAXPY](programs/cuda/saxpy_nvidia.cu), [guía](docs/nvidia-saxpy-3x.md), [workflow manual](.github/workflows/aws-saxpy-three-runs.yml) y [verificador](scripts/ci/verify_three_runs.py) permiten comprobar tres instancias EC2 distintas, tres ejecuciones CUDA correctas, logs en Actions y tres terminaciones. Los logs y binarios se archivan como GitHub Artifacts con 90 días solicitados.
+
+**Estado real: 0/3 ejecuciones CUDA.** Después de actualizar la tarjeta, AWS volvió a responder `Client.Blocked` a `RunInstances` a las 17:14 UTC del 21/11/2026. No se creó ninguna EC2. No ejecutar nuevos ciclos hasta que AWS Support confirme el desbloqueo y se configuren las variables de AWS OIDC del repositorio; mantener `AWS_CUDA_ENABLED=false`. [Incidencia #7](https://github.com/skyirim/prueba-cuda/issues/7).
