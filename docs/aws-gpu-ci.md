@@ -167,3 +167,8 @@ La prueba real de calificación de una instancia gr6.8xlarge (NVIDIA L4) fue **r
 Por ello la infraestructura base sí está desplegada, pero la funcionalidad GPU CI está **bloqueada y sin pruebas reales**. No activar variables de GPU en GitHub hasta que [AWS Support resuelva el bloqueo](https://support.console.aws.amazon.com/support/home?region=us-east-1#/case/create?issueType=customer-service&serviceCode=account-management&categoryCode=account-verification), se configure la confianza OIDC en GitHub Actions con las salidas de CloudFormation y se superen calificación AMI y portabilidad UCAM. Seguimiento en [GitHub Issue #7](https://github.com/skyirim/prueba-cuda/issues/7).
 
 El intento rechazado aplicó límite Spot de 0,60 USD/h y TTL 20 minutos, pero nunca comenzó a facturar una EC2 porque RunInstances no la creó. La pila base (S3, CloudWatch, EventBridge/Lambda) puede implicar costes menores propios aunque no existan máquinas GPU.
+
+
+## Prueba SAXPY: tres ciclos AWS sin ejecución todavía
+
+El [workflow de tres pruebas](../.github/workflows/aws-saxpy-three-runs.yml) ejecuta tres EC2 secuenciales y valida compilación, kernel NVIDIA SAXPY, logs en GitHub y borrado por instancia. Exige desbloqueo AWS, variables GitHub OIDC configuradas y aprobación `AWS_CUDA_PROBE_ENABLED=true`. Precio máximo 0,60 USD/h y TTL 30 min por EC2. La prueba de `RunInstances` después de actualizar tarjeta devolvió aún `Client.Blocked` (21/11/2026, 17:14 UTC); no se ejecutó ningún kernel. Ver [guía de prueba](nvidia-saxpy-3x.md).

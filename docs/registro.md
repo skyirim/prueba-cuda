@@ -37,3 +37,8 @@
 - Intento manual de lanzar Spot gr6.8xlarge con precio máximo 0,60 USD/h, plazo máximo 20 minutos y GPU L4 suficiente en especificaciones: respuesta EC2 RunInstances error Blocked por estado de la cuenta AWS. No se creó EC2, por lo tanto no se ejecutaron GCC, nvcc ni kernel CUDA.
 - DescribeInstances posterior con Project=prueba-cuda: cero instancias. No se habilitó CI automática mediante GitHub variables.
 - Incidencia [#7](https://github.com/skyirim/prueba-cuda/issues/7) creada con pasos de desbloqueo AWS y configuración pendiente.
+
+
+## 2026-11-21, 17:14 UTC: reintento posterior a actualizar tarjeta
+
+Spot `gr6.8xlarge` us-west-2c consultado 0,4929 USD/h con máximo 0,60. `RunInstances` devolvió de nuevo `Client.Blocked`: RequestId `ddc25c95-c5d6-45b0-9fac-79ed675b705b`, CloudTrail EventId `a6a506dc-4f75-49e7-ab08-5017c17a5a44`. Cero EC2 creadas y 0/3 pruebas CUDA ejecutadas. Se prepararon el ejemplo SAXPY de NVIDIA, workflow de tres ciclos independientes, verificador de logs y documentación [nvidia-saxpy-3x.md](nvidia-saxpy-3x.md). Pendiente desbloqueo AWS y variables OIDC GitHub.
