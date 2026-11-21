@@ -8,6 +8,7 @@ from scripts.audit_codex_reviews import (
 )
 
 from scripts.sync_codex_review_issues import synchronize, marker
+from scripts.check_codex_review_result import check as check_codex_result
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -100,6 +101,25 @@ class CodexReviewPolicyTests(unittest.TestCase):
         self.assertEqual(client.issues[0]['state'], 'open')
         self.assertTrue(client.issues[0]['body'].startswith(marker('pr-3')))
         self.assertEqual([call[0] for call in client.calls], ['POST'])
+
+    def test_code_review_gate_reports_pending_findings(self):
+        self.assertEqual(check_codex_result({'findings': []}), [])
+        pending = check_codex_result({'findings': [
+            {'title': 'PR #4', 'items': [{'url': 'https://github.com/pull/4'}]}]})
+        self.assertEqual(len(pending), 1)
+        self.assertIn('PR #4', pending[0])
+
+    def test_review_events_are_read_only_and_issue_sync_is_privileged(self):
+        readonly = (ROOT / '.github/workflows/codex-review-sentinel.yml').read_text(encoding='utf-8')
+        privileged = (ROOT / '.github/workflows/codex-review-issue-sync.yml').read_text(encoding='utf-8')
+        self.assertIn('issues: read', readonly)
+        self.assertNotIn('issues: write', readonly)
+        self.assertNotIn('sync_codex_review_issues.py', readonly)
+        self.assertIn('check_codex_review_result.py', readonly)
+        self.assertIn('workflow_run:', privileged)
+        self.assertIn('issues: write', privileged)
+        self.assertIn('sync_codex_review_issues.py', privileged)
+        self.assertIn('ref: ${{ github.event.repository.default_branch }}', privileged)
 
 
 if __name__ == "__main__":
