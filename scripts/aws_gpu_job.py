@@ -264,6 +264,8 @@ def script_for_step(name: str, bucket: str, prefix: str, region: str) -> str:
     work = "cd /opt/prueba-cuda\n"
     if name == "prepare":
         return (head
+                + "for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do "
+                + "[ ! -f \"$f\" ] || sed -i 's|http://|https://|g' \"$f\"; done\n"
                 + "command -v aws >/dev/null || "
                 + "(apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y awscli)\n"
                 + "mkdir -p /opt/prueba-cuda\n"

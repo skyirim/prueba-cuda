@@ -129,6 +129,16 @@ class AwsJobTests(unittest.TestCase):
         self.assertIn("token.actions.githubusercontent.com:sub", trust["Condition"]["StringEquals"])
         watcher = resources["WatchdogRule"]["Properties"]["ScheduleExpression"]
         self.assertEqual(watcher, "rate(5 minutes)")
+        self.assertEqual(sg["SecurityGroupEgress"][0]["IpProtocol"], "tcp")
+        self.assertEqual(sg["SecurityGroupEgress"][0]["FromPort"], 443)
+        self.assertEqual(sg["SecurityGroupEgress"][0]["ToPort"], 443)
+        instance_permissions = resources["InstanceRole"]["Properties"]["Policies"][0]["PolicyDocument"]["Statement"]
+        names = {s.get("Sid") for s in instance_permissions}
+        self.assertTrue({"CWDiscoverGroups", "CWDiscoverStreams", "CWWriteStreams"} <= names)
+        controller = resources["GithubRole"]["Properties"]["Policies"][0]["PolicyDocument"]["Statement"]
+        tagged = next(s for s in controller if s.get("Sid") == "SendSsmOnlyTaggedCIInstances")
+        self.assertEqual(tagged["Condition"]["StringEquals"]["ssm:resourceTag/Project"], "prueba-cuda")
+        self.assertEqual(tagged["Condition"]["StringEquals"]["ssm:resourceTag/Mode"], "ci")
 
     def test_action_push_gated_and_publishes_always(self):
         workflow = (ROOT / ".github/workflows/aws-gpu-ci.yml").read_text()

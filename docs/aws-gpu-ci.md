@@ -152,3 +152,7 @@ aws cloudformation validate-template --region us-west-2 \
 ```
 
 Documentación del diseño original para runners JIT: [docs/arquitectura.md](arquitectura.md). En esta implementación el modo SSM **no requiere GitHub App ni token de registro de self-hosted runner**. La variante nativa self-hosted debe construirse y validarse por separado.
+
+### Acceso saliente y coste
+
+Para evitar coste fijo de interfaces VPC endpoints, el grupo de seguridad no tiene entradas y permite únicamente conexiones salientes TCP/443 a servicios públicos de AWS y repositorios HTTPS de Ubuntu. No es filtrado por nombres de dominio; los accesos se restringen por protocolo y por el código de bootstrap verificado. Si se requiere **restricción también por destino**, desplegar SSM, SSMMessages, EC2Messages y CloudWatch por VPC endpoints y S3 gateway endpoint, usando AMI prebakeada y control de egress; estos endpoints de interfaz pueden suponer cargos horarios permanentes. Queda prohibido describir el modo económico como filtrado por dominio o por destino.
