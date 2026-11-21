@@ -28,3 +28,12 @@
 - Los dos hilos P2 de PR #4 se contestaron y resolvieron. El hilo P1 de PR #3 se contestó y resolvió tras fusionar la corrección.
 - Una ejecución inicial de Sentinel (44921088320) vio PR #3 pendiente porque se ejecutó antes del cierre del hilo. Una auditoría posterior debe comprobar el estado final y no debe dejarse el check rojo sin justificación.
 - Importante: estos tests no acreditan aún ejecución de kernels CUDA en las instancias AWS ni en el servidor UCAM; sigue siendo un requisito pendiente distinto de la revisión del código.
+
+
+## 21-11-2026 — implementación CI AWS y bloqueo de cuenta
+
+- PR #5 fusionado tras revisar y resolver tres hallazgos P1 de Codex sobre permisos CloudWatch, alcance SSM SendCommand y reducción de egress a TCP/443. Pruebas CI offline correctas; funcionalidad AWS GPU todavía sin probar.
+- CloudFormation prueba-cuda-ci desplegada en us-west-2 con estado CREATE_COMPLETE: IAM OIDC y roles, S3 cifrado, CloudWatch, SG sin entradas, Lambda watchdog TTL.
+- Intento manual de lanzar Spot gr6.8xlarge con precio máximo 0,60 USD/h, plazo máximo 20 minutos y GPU L4 suficiente en especificaciones: respuesta EC2 RunInstances error Blocked por estado de la cuenta AWS. No se creó EC2, por lo tanto no se ejecutaron GCC, nvcc ni kernel CUDA.
+- DescribeInstances posterior con Project=prueba-cuda: cero instancias. No se habilitó CI automática mediante GitHub variables.
+- Incidencia [#7](https://github.com/skyirim/prueba-cuda/issues/7) creada con pasos de desbloqueo AWS y configuración pendiente.

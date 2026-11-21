@@ -58,3 +58,8 @@
 ## Fase implementada como artefactos reproducibles (pendiente de despliegue)
 
 Se añadieron [CloudFormation](../infrastructure/cloudformation/gpu-ci-base.json), [workflow GitHub](../.github/workflows/aws-gpu-ci.yml), [controlador Python](../scripts/aws_gpu_job.py) y [scripts Linux](../scripts/ci). Tras configurar OIDC, permisos, una AMI y pruebas de referencia, se podrán crear EC2 Spot bajo demanda con fases independientes de GCC/nvcc, ejecutar kernels reales, guardar registros íntegros, publicar artifacts y terminar automáticamente las VMs. El modo manual qualify permite comprobar la AMI sin habilitar push automático ni marcarla VERIFIED. El modo SSM no es un runner self-hosted de GitHub registrado. Para los pasos de activación, ver [docs/aws-gpu-ci.md](aws-gpu-ci.md).
+
+
+## Estado después de ejecutar CloudFormation
+
+La infraestructura base AWS de prueba-cuda-ci está en CREATE_COMPLETE desde el 21-11-2026, pero la cuenta bloquea EC2 RunInstances por estado de verificación. No se ha levantado ni probado GPU. Esta situación sustituye la afirmación anterior de que la pila base no estaba desplegada: **IaC desplegada, CI C/CUDA pendiente y bloqueada**. Ver [Issue #7](https://github.com/skyirim/prueba-cuda/issues/7) y [docs/aws-gpu-ci.md](aws-gpu-ci.md).

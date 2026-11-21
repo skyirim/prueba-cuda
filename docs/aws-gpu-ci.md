@@ -156,3 +156,14 @@ Documentación del diseño original para runners JIT: [docs/arquitectura.md](arq
 ### Acceso saliente y coste
 
 Para evitar coste fijo de interfaces VPC endpoints, el grupo de seguridad no tiene entradas y permite únicamente conexiones salientes TCP/443 a servicios públicos de AWS y repositorios HTTPS de Ubuntu. No es filtrado por nombres de dominio; los accesos se restringen por protocolo y por el código de bootstrap verificado. Si se requiere **restricción también por destino**, desplegar SSM, SSMMessages, EC2Messages y CloudWatch por VPC endpoints y S3 gateway endpoint, usando AMI prebakeada y control de egress; estos endpoints de interfaz pueden suponer cargos horarios permanentes. Queda prohibido describir el modo económico como filtrado por dominio o por destino.
+
+
+## Actualización de implantación 21/11/2026: AWS en estado bloqueado
+
+La pila CloudFormation **prueba-cuda-ci** fue creada correctamente en us-west-2 y AWS confirmó CREATE_COMPLETE con salidas para BucketName, GithubRoleArn, InstanceProfileName, SecurityGroupId, SsmLogGroup y WatchdogFunction. No son credenciales y deben consultarse en el propio entorno AWS para configurar GitHub.
+
+La prueba real de calificación de una instancia gr6.8xlarge (NVIDIA L4) fue **rechazada por EC2 RunInstances**: error **Blocked — This account is currently blocked and not recognized as a valid account**. No se creó la instancia. La posterior consulta DescribeInstances filtrada por Project=prueba-cuda no detectó ninguna EC2 del proyecto.
+
+Por ello la infraestructura base sí está desplegada, pero la funcionalidad GPU CI está **bloqueada y sin pruebas reales**. No activar variables de GPU en GitHub hasta que [AWS Support resuelva el bloqueo](https://support.console.aws.amazon.com/support/home?region=us-east-1#/case/create?issueType=customer-service&serviceCode=account-management&categoryCode=account-verification), se configure la confianza OIDC en GitHub Actions con las salidas de CloudFormation y se superen calificación AMI y portabilidad UCAM. Seguimiento en [GitHub Issue #7](https://github.com/skyirim/prueba-cuda/issues/7).
+
+El intento rechazado aplicó límite Spot de 0,60 USD/h y TTL 20 minutos, pero nunca comenzó a facturar una EC2 porque RunInstances no la creó. La pila base (S3, CloudWatch, EventBridge/Lambda) puede implicar costes menores propios aunque no existan máquinas GPU.

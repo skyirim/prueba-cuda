@@ -1,6 +1,6 @@
 # prueba-cuda — Laboratorio reproducible de C y NVIDIA CUDA en AWS
 
-**Estado (21-11-2026): DOCUMENTACIÓN / DISEÑO; entorno equivalente NO CERTIFICADO; infraestructura NO DESPLEGADA.**
+**Estado (21-11-2026): infraestructura AWS base DESPLEGADA; EC2 GPU BLOQUEADA por estado de la cuenta AWS; ejecución C/CUDA real NO CERTIFICADA; activación push deshabilitada.**
 
 Este repositorio es la fuente de verdad para investigar, dimensionar, construir, ejecutar y mantener un entorno de desarrollo Linux para **C y NVIDIA CUDA** accesible remotamente y utilizable como runner efímero de GitHub Actions. Prioridad: **compatibilidad con la máquina base, comprobación real de los recursos y coste total mínimo por ejecución**.
 
@@ -162,3 +162,15 @@ El workflow [Codex Review Sentinel](.github/workflows/codex-review-sentinel.yml)
 Las salidas de cada etapa se imprimen en GitHub Actions y se publican como artefactos incluso al fallar, con retención solicitada de 90 días (sujeta al plan GitHub). AWS S3 y CloudWatch proporcionan una copia temporal de 7 días.
 
 **Distinción:** en esta modalidad la EC2 ejecuta comandos vía SSM, controlados por un runner GitHub-hosted, pero no se registra todavía como runner self-hosted nativo. No se han validado aún las ejecuciones de GPU en AWS/UCAM. El archivo hardware-base.json sigue en estado DRAFT y los pools aprobados están vacíos; el proceso automático queda bloqueado hasta completar los requisitos y activar las variables.
+
+
+## 12. Estado real AWS tras desplegar la pila: EC2 bloqueada
+
+El 21-11-2026 se creó y verificó en AWS Oregón la pila CloudFormation prueba-cuda-ci, con estado CREATE_COMPLETE: IAM OIDC, S3 privado, EC2 SSM, CloudWatch, SG no ingress y watchdog TTL. La primera prueba de calificación fue rechazada por EC2 RunInstances con error **Blocked: This account is currently blocked and not recognized as a valid account**.
+
+La respuesta vino de la propia API AWS y no significa falta de CPU/GPU ni insuficiencia de tarifa Spot. Una consulta posterior confirmó **cero instancias** etiquetadas como prueba-cuda. El flujo GitHub sigue desactivado porque falta desbloquear la cuenta, configurar las variables de Actions y realizar pruebas C/CUDA reales. No declararlo operativo.
+
+- [Incidencia #7: bloqueo AWS y pasos para continuar](https://github.com/skyirim/prueba-cuda/issues/7).
+- [Guía de implantación y configuración de GitHub Actions](docs/aws-gpu-ci.md).
+
+**No volver a intentar lanzamientos EC2 hasta que AWS Support confirme que la cuenta está habilitada.** Los costes de infraestructura base no son equivalentes a una prueba GPU superada.
