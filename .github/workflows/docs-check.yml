@@ -1,0 +1,32 @@
+name: Documentacion y reglas permanentes
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-documentation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Verificar documentacion y enlaces
+        run: python3 scripts/check_repo.py
+      - name: Probar gate de equivalencia
+        run: python3 -m unittest discover -s tests -v
+      - name: Confirmar bloqueo de equipo base pendiente
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path("config/hardware-base.json").read_text())
+          print("Estado hardware:", p["status"])
+          if p["status"] == "VERIFIED":
+              print("La certificacion final exige inventario y pruebas reales GPU.")
+          else:
+              print("Sin datos adjuntos: CI documental, NO CI GPU.")
+          PY

@@ -1,0 +1,31 @@
+{
+  "cpu": {
+    "architecture": null,
+    "physical_cores_visible": null,
+    "physical_cores_verified": false,
+    "logical_processors": null,
+    "ram_gib": null
+  },
+  "gpu": {
+    "devices": null,
+    "sm_visible": null,
+    "cuda_cores_fp32_verified": null,
+    "gpu_cores_verified": false,
+    "vram_mib": null,
+    "compute_capability": null,
+    "is_fractional": null
+  },
+  "tests": {
+    "c_smoke_pass": false,
+    "cuda_smoke_pass": false,
+    "reference_comparison_pass": false
+  },
+  "evidence": {
+    "cpu_physical_cores": null,
+    "gpu_cuda_cores": null,
+    "reference_results": null,
+    "workflow_url": null,
+    "ami_id": null,
+    "timestamp_utc": null
+  }
+}

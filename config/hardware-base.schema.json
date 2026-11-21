@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/skyirim/prueba-cuda/blob/main/config/hardware-base.schema.json",
+  "title": "Equipo de referencia C/CUDA",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "source_document",
+    "cpu",
+    "gpu",
+    "software",
+    "portability"
+  ],
+  "properties": {
+    "status": {
+      "enum": [
+        "PENDING_SOURCE",
+        "DRAFT",
+        "VERIFIED"
+      ]
+    },
+    "source_document": {
+      "type": "object",
+      "required": [
+        "name",
+        "sha256",
+        "date",
+        "sections"
+      ],
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "cpu": {
+      "type": "object",
+      "required": [
+        "architecture",
+        "physical_cores_min",
+        "logical_processors_min",
+        "ram_gib_min"
+      ],
+      "properties": {
+        "architecture": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "physical_cores_min": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "logical_processors_min": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "ram_gib_min": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "gpu": {
+      "type": "object",
+      "required": [
+        "vendor",
+        "devices_min",
+        "model",
+        "full_gpu_required",
+        "cuda_cores_fp32_min",
+        "sm_min",
+        "vram_mib_min",
+        "compute_capability_min"
+      ],
+      "properties": {
+        "vendor": {
+          "const": "NVIDIA"
+        },
+        "devices_min": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "full_gpu_required": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "cuda_cores_fp32_min": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "sm_min": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "vram_mib_min": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "compute_capability_min": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]+\\.[0-9]+$"
+        }
+      }
+    },
+    "software": {
+      "type": "object",
+      "required": [
+        "os",
+        "gcc",
+        "cuda_toolkit",
+        "nvidia_driver",
+        "abi"
+      ],
+      "properties": {
+        "os": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "gcc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cuda_toolkit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nvidia_driver": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "abi": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "portability": {
+      "type": "object",
+      "required": [
+        "same_cpu_binary_required",
+        "reference_tests"
+      ],
+      "properties": {
+        "same_cpu_binary_required": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "reference_tests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

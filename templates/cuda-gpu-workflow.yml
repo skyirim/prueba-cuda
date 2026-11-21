@@ -1,0 +1,43 @@
+# EJEMPLO INACTIVO: no mover a .github/workflows hasta tener perfil base,
+# AMI validada, permisos, controlador externo, costos y cleanup comprobados.
+# La etiqueta X64 es solo ejemplo. Cambiarla si el hardware certificado es ARM64.
+name: CUDA GPU certificado
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile-and-test:
+    runs-on: [self-hosted, linux, X64, cuda-gpu-verified]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Versiones y diagnóstico
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          { date -u; uname -a; lscpu; gcc --version; nvcc --version; nvidia-smi; } 2>&1 | tee build/hardware.log
+      - name: Compilacion C y CUDA
+        shell: bash
+        run: |
+          set -euo pipefail
+          make all 2>&1 | tee build/compilacion.log
+      - name: Pruebas CUDA reales
+        shell: bash
+        run: |
+          set -euo pipefail
+          make test 2>&1 | tee build/pruebas.log
+      - name: Registrar salida y binarios
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: c-cuda-resultado
+          path: build/
+          if-no-files-found: warn
+          retention-days: 14

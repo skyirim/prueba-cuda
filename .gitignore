@@ -1,0 +1,19 @@
+# Compilacion e inventarios locales
+build/
+*.o
+*.out
+*.log
+__pycache__/
+*.pyc
+.env
+.env.*
+!*.example
+*.pem
+*.key
+*.p12
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
