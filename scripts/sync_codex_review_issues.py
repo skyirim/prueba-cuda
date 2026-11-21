@@ -89,7 +89,7 @@ def synchronize(client: Client, audit: dict) -> dict:
     for issue in client.list_issues(repo):
         body = issue.get("body") or ""
         if body.startswith(MARKER):
-            key = body.split("-->", 1)[0][len(MARKER):]
+            key = body.split("-->", 1)[0][len(MARKER):].strip()
             current[key] = issue
 
     found = {g["key"]: g for g in audit["findings"]}
