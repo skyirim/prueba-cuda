@@ -13,3 +13,8 @@ description: Diseña y verifica el escalado bajo demanda de runners GitHub Actio
 6. Configurar watchdog independiente, TTL, tags, límites de concurrencia y rollback; probar errores previos y posteriores al registro GitHub.
 7. CI publica cada stdout/stderr, artifacts y estado final; los fallos de arranque e interrupción están en CloudWatch.
 8. Entregar Terraform reproducible, plan, pruebas, inventario, coste real, seguridad y evidencia de destrucción antes de aprobar.
+
+
+## Selección obligatoria antes de arrancar
+
+Ningún flujo de GitHub debe crear una EC2 directamente sin invocar selección de Spot y cuota **justo antes de cada RunInstances**, TTL <=60 segundos, reconsulta ante Spot unavailable y pruebas de compatibilidad con CPU/GPU UCAM. Una oferta actual seleccionada no da derecho a mantenerla cacheada para el siguiente job. Si no hay máquina viable que cumpla >=12 cores físicos CPU y >=4.352 CUDA cores GPU completa, el job debe fallar claramente sin aprovisionar.

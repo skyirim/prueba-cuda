@@ -39,3 +39,12 @@
 | Desviación de versiones CUDA / GPU | Matriz, pins, pruebas en equipo base y destino |
 
 **Estado: arquitectura propuesta; no está desplegada.** Tras aprobación del perfil de referencia, implementar con Terraform versionado y pruebas de destrucción.
+
+
+## 5. Selector de precios en tiempo de arranque (obligatorio)
+
+Entre recibir un job y pedir EC2, ejecutar selección fresca **inmediatamente antes de cada nueva instancia**: consulta actual de `DescribeInstanceTypes`, `DescribeSpotPriceHistory` y cuotas regionales, filtrado de GPU y CPU según [UCAM](hardware-base.md), consideración de regiones/AZ y AMIs certificadas, ordenación por coste real. El precio de un runner previo no sirve para otro push; tampoco sirve el precio documentado el día de creación de la AMI.
+
+TTL máximo del plan 60 segundos. Revalidar en el instante de `RunInstances`; si expira reconsultar; ante rechazo Spot reconsultar y seleccionar otra opción sin degradar. Registrar cotización UTC exacta y AWS request IDs de los eventos de lanzamiento y limpieza. Recurso de control y máquina de desarrollo por SSH siguen la **misma regla**. [Implementación de referencia de selector](../infrastructure/select_gpu_spot.py).
+
+**Actualmente no existe un controlador en producción que haga RunInstances automáticamente**; el selector es un componente comprobable para incorporarlo a ese controlador.

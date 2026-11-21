@@ -1,36 +1,45 @@
 {
-  "status": "PENDING_SOURCE",
+  "status": "DRAFT",
   "source_document": {
-    "name": null,
-    "sha256": null,
-    "date": null,
-    "sections": []
+    "name": "Informacion_servidor_Programacion_Paralela_UCAM-2026.txt",
+    "sha256": "07a5105d27c18ffd3caa464054885187d93a65b0240d4804d0efae910c349f8f",
+    "date": "2026-11-10",
+    "sections": [
+      "Ubuntu 22.04.5 LTS / uname -a",
+      "cat /proc/cpuinfo, procesadores 0..11",
+      "free -h",
+      "nvidia-smi"
+    ]
   },
   "cpu": {
-    "architecture": null,
-    "physical_cores_min": null,
-    "logical_processors_min": null,
-    "ram_gib_min": null
+    "architecture": "x86_64",
+    "physical_cores_min": 12,
+    "logical_processors_min": 12,
+    "ram_gib_min": 31
   },
   "gpu": {
     "vendor": "NVIDIA",
-    "devices_min": null,
-    "model": null,
-    "full_gpu_required": null,
-    "cuda_cores_fp32_min": null,
-    "sm_min": null,
-    "vram_mib_min": null,
-    "compute_capability_min": null
+    "devices_min": 1,
+    "model": "NVIDIA GeForce RTX 2080 Ti",
+    "full_gpu_required": true,
+    "cuda_cores_fp32_min": 4352,
+    "sm_min": 68,
+    "require_sm_parity": false,
+    "vram_mib_min": 11264,
+    "compute_capability_min": "7.5"
   },
   "software": {
-    "os": null,
+    "os": "Ubuntu 22.04.5 LTS",
     "gcc": null,
     "cuda_toolkit": null,
-    "nvidia_driver": null,
-    "abi": null
+    "nvidia_driver": "535.288.01",
+    "abi": "x86_64-linux-gnu"
   },
   "portability": {
-    "same_cpu_binary_required": null,
-    "reference_tests": []
+    "same_cpu_binary_required": false,
+    "reference_tests": [
+      "Compilar y ejecutar programa C nativo en equipo UCAM (pendiente de ejecutar)",
+      "Compilar CUDA para sm_75 y ejecutar kernel nativo en RTX 2080 Ti (pendiente de ejecutar)"
+    ]
   }
 }

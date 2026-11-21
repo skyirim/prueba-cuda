@@ -1,18 +1,18 @@
 # Plan reproducible de implantación por fases
 
-## Fase 0 — requisito previo obligatorio (NO cumplido)
+## Fase 0 — hardware fuente disponible, verificación de ejecución PENDIENTE
 
-- Obtener el archivo de equipo base, conservar su integridad y transcripción técnica; completar config/hardware-base.json.
+- Fichero base UCAM recibido el 21-11-2026, identificado mediante SHA-256. Configurado config/hardware-base.json con CPU >=12 cores físicos, NVIDIA >=4.352 CUDA cores, RAM >=31 GiB, VRAM >=11.264 MiB. Falta comprobar el Toolkit instalado y ejecutar pruebas reales en UCAM.
 - Identificar número de cores **físicos** CPU, CUDA cores disponibles y SM, GPU completa vs virtualizada, VRAM, arquitectura de CPU, compute capability, SO/driver/CUDA, apps, librerías y formas de ejecución.
 - Determinar si se exige misma ISA/binario o portabilidad de código fuente. Aprobar pruebas equivalentes ejecutables en base y nube.
-- Sin el fichero o sin valores verificables: mantener CI GPU deshabilitado. Nunca inventar números.
+- Con requisitos numéricos documentados pero sin pruebas C/CUDA cruzadas ni AMI certificada: mantener CI GPU deshabilitado. No declarar garantizada la portabilidad.
 
 ## Fase 1 — investigación y selección coste/capacidad
 
 1. Ejecutar consultas docs/aws-investigacion.md (fecha, regiones, tipos, Spot reciente por AZ, On-Demand, cuotas G/VT, imagen Linux compatible, presupuesto).
-2. Filtrar por todos los mínimos verificados y compatibilidad de CUDA/driver. Tener en cuenta que G6f expone GPU fraccionada; no sumar CUDA cores teóricos sin prueba.
+2. Filtrar por todos los mínimos UCAM: >=12 cores físicos, >=4.352 CUDA cores de una GPU completa, >=11.264 MiB VRAM, >=31 GiB RAM, CUDA sm_75 portable. G6f y G5g pequeñas quedan descartadas; no sumar cores de GPUs ni vCPU como cores físicos.
 3. Estimar coste desde encendido hasta destrucción; añadir EBS, IPv4, logs, imágenes, contingencias; comparar USD por compilación correcta.
-4. Registrar ADR para la elección final, con versiones de sistema/toolchain, precios, AWS región/AMI y opciones rechazadas.
+4. Registrar ADR para la elección final, con versiones de sistema/toolchain, precios, AWS región/AMI y opciones rechazadas. Antes de **cada** EC2 RunInstances, ejecutar selector de precios/cuotas de AWS en tiempo real (TTL <=60 segundos) y registrar la tarifa escogida.
 
 ## Fase 2 — fabricar AMI probada
 

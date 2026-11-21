@@ -27,3 +27,8 @@ Referencias:
 - https://docs.github.com/en/actions/reference/security/secure-use
 - https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
 - https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_passrole.html
+
+
+## Política económica de ejecución
+
+El camino hacia `ec2:RunInstances` deberá validar un plan generado con consulta AWS **justo antes del arranque**, caducidad <=60 segundos y lista de imágenes/roles autorizados. No conceder a los jobs GitHub de usuario acceso al permiso RunInstances: es el controlador aislado quien consume el plan y arranca. No hay excepción para una sesión SSH de desarrollo. Si el selector falla o no hay imagen Linux CUDA certificada, **no provisionar**, aunque exista una tarifa Spot atractiva.

@@ -17,7 +17,7 @@ def audit(today: date | None = None):
     age = (today - captured).days
     findings = []
     if baseline["status"] != "VERIFIED":
-        findings.append("Equipo base sin especificaciones verificadas (fichero adjunto pendiente).")
+        findings.append("Equipo base documentado pero equivalencia CUDA y resultados UCAM/AWS pendientes de certificar.")
     if age > max_age:
         findings.append(f"Consulta de precios/cuotas AWS antigua: {age} dias (limite {max_age}).")
     return findings, age, snapshot["captured_utc"]
