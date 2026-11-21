@@ -56,3 +56,7 @@ El hardware base está documentado: **12 CPU físicos, una GPU RTX 2080 Ti con 4
 - Requisitos adicionales: no introducir intrínsecos CPU exclusivos no presentes en Xeon E5-2603 v4 ni APIs/instrucciones CUDA exclusivas de Ampere/Ada/Blackwell sin ruta portable a Turing; comparar resultados con tolerancia cuando haya punto flotante.
 - Para pruebas reales del servidor UCAM sigue faltando `nvcc --version` y ejecutar los programas allí. **No se ha certificado todavía ejecución cruzada**.
 - Modificado el gate: los 68 SM se documentan como propiedad de referencia, pero `require_sm_parity=false` NO los convierte en requisito separado; el número de CUDA cores sí es un mínimo.
+
+## 7. Hallazgo Codex P1 del PR #3: compatibilidad entre GPU
+
+Un binario CUDA que contiene solo cubins sm_75 y sm_89 no garantiza ejecución en A10G sm_86 ni en GPUs futuras. El Makefile conserva un cubin sm_75 para el equipo UCAM y PTX compute_75 para permitir JIT hacia arquitecturas compatibles posteriores (con controlador y Toolkit adecuados). Un binario específico más optimizado podrá incorporar cubins nativos adicionales sin eliminar el PTX ni el objetivo UCAM. Esto no reemplaza las pruebas en hardware real.

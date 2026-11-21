@@ -135,3 +135,11 @@ Se requiere separación entre entorno interactivo SSH y runner CI. El controlado
 5. Terminar la instancia al finalizar el trabajo; registrar tiempo y coste real. El selector inicial está en [infrastructure/select_gpu_spot.py](infrastructure/select_gpu_spot.py), con pruebas [tests/test_spot_selector.py](tests/test_spot_selector.py) y procedimiento [docs/precio-en-arranque.md](docs/precio-en-arranque.md). **El despliegue AWS sigue pendiente**: el selector es un módulo de decisión, no un controlador de instancias ya instalado.
 
 La tarifa **0,4929 USD/h de `gr6.8xlarge` en Oregón** fue la menor Spot observada hoy entre las opciones numéricamente adecuadas con cuota regional. **No es un precio que deba utilizarse en futuros lanzamientos sin volver a consultar AWS.** Más detalles en [docs/aws-investigacion.md](docs/aws-investigacion.md) y [ADR-0002](docs/decisiones/0002-tarifa-tiempo-real.md).
+
+## 10. Revisión iterativa permanente de Codex
+
+La regla **CODEX-REVIEW-12** de [AGENTS.md](AGENTS.md) obliga a analizar y tratar toda revisión de chatgpt-codex-connector en ramas, commits, PRs abiertos/fusionados y comentarios, corregir el código, ejecutar pruebas, responder a los hilos y volver a inspeccionar revisiones anteriores y nuevas hasta que no queden hallazgos pendientes.
+
+Se documenta en [docs/codex-review-loop.md](docs/codex-review-loop.md) y en la [Skill OpenCode](.opencode/skills/codex-review-loop/SKILL.md). El control automatizado [Codex Review Sentinel](.github/workflows/codex-review-sentinel.yml) inspecciona discusiones y hace visibles las pendientes; no escribe soluciones por sí solo.
+
+El hallazgo P1 de [PR #3](https://github.com/skyirim/prueba-cuda/pull/3#discussion_r4653362446) detectó la falta de PTX forward-compatible con A10G sm_86 y otras GPU. El Makefile pasa a conservar código sm_75 y PTX compute_75; los tests previenen esta regresión. Pendiente validar ejecución física GPU en las instancias aprobadas.

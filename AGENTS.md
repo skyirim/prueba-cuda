@@ -45,3 +45,15 @@ Cada push: validar formato/presencia y consistencia de documentación con CI bar
 - Recalcular todas las opciones elegibles por región/AZ y registrar motivo de exclusión de cada candidata. La falta de capacidad de la más barata no habilita a bajar recursos; pasar a la siguiente elegible, previa reconsulta.
 - Nunca se presupone que «menor tarifa Spot» implica «capacidad Spot disponible»: la selección requiere gestionar solicitudes fallidas y limpieza. Costes por hora y por job separados.
 - Mantener pruebas de regresión del filtro y del criterio de selección cada vez que cambie un requisito, GPU, Toolkit o AWS. El controlador no existe aún; esta norma queda ya almacenada para su implementación obligatoria.
+
+## CODEX-REVIEW-12 — regla permanente de revisiones iterativas
+
+**Ámbito: todas las ramas, commits, PR abiertos o fusionados y comentarios del repositorio.** Toda revisión del autor chatgpt-codex-connector (incluida la cuenta [bot]) debe examinarse, corregirse si procede, probarse, responderse y verificarse de nuevo hasta que los hallazgos estén resueltos.
+
+1. Antes de empezar un cambio, antes de fusionar y después de cada corrección, consultar reviews generales, comentarios inline, hilos de revisión, comentarios de conversación/commit y resúmenes de Codex. Inspeccionar también revisiones en PR fusionados; una revisión COMMENTED puede contener P1.
+2. Registrar cada hallazgo por URL/ID/commit/archivo/criticidad, reproducir el problema y diseñar un arreglo. Implementarlo en una rama/PR y añadir pruebas de regresión. No ocultar o silenciar errores ni desactivar tests.
+3. Ejecutar los tests y comprobar el código; responder en el hilo original con commit, explicación y resultados. Resolverlo en GitHub únicamente tras validar la corrección; si el PR original está fusionado, enlazar un PR correctivo separado.
+4. Volver a inspeccionar todas las revisiones existentes y **las nuevas** de Codex, especialmente sobre el PR de la corrección. Repetir revisión → solución → pruebas → respuesta → nueva revisión hasta que no queden pendientes.
+5. Si no es técnicamente posible corregirla, abrir o mantener una incidencia con motivo y bloqueo, y no declarar el hallazgo resuelto. Si la observación es incorrecta, justificarlo con evidencias al revisor antes de resolverla.
+6. Los agentes OpenCode deben usar la Skill codex-review-loop y la guía docs/codex-review-loop.md. El workflow de vigilancia detecta y da visibilidad a incidencias, pero **no modifica código automáticamente**. No fusionar PRs con hallazgos Codex pendientes.
+7. Cuando estén disponibles reglas de protección de ramas, exigir el check de auditoría de revisiones como condición de fusión. La falta de permisos para configurar protección se declara como pendiente, no como requisito ya aplicado.
