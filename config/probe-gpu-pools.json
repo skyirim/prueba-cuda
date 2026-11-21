@@ -1,0 +1,20 @@
+{
+  "status": "MANUAL_PROBE_ONLY",
+  "region": "us-west-2",
+  "official_ami_name": "Deep Learning Base OSS Nvidia Driver GPU AMI (Ubuntu 22.04) 20261113",
+  "instance_types": [
+    "gr6.8xlarge",
+    "g6.8xlarge",
+    "g5.8xlarge",
+    "g7.4xlarge",
+    "g6e.8xlarge"
+  ],
+  "allowed_zones": [
+    "us-west-2a",
+    "us-west-2b",
+    "us-west-2c",
+    "us-west-2d"
+  ],
+  "estimated_additional_usd_h": 0.03,
+  "notice": "AMI/subredes consultadas en AWS al ejecutar; no aprobadas automaticamente para CI en push."
+}

@@ -55,3 +55,8 @@ Mensualmente o con cambios de proveedor: cotizaciones Spot, cuotas por región, 
 El monitor mensual sirve para alertar de documentación/precios envejecidos; **no** reemplaza consultar AWS antes de **cada nueva instancia**. La selección para un arranque debe registrar hora UTC (con segundos), tipos y AZ comparados, precios Spot realmente consultados, cuotas, AMI aprobada, cores CPU/GPU, coste total previsto, motivo de elección, alternativas rechazadas y límite TTL 60 s. Si el controlador no puede obtener cotización actual, debe fallar sin arrancar; si Spot resulta unavailable, refrescar y probar siguiente oferta compatible, o informar al usuario.
 
 Para el inventario UCAM vigente: >=12 cores CPU físicos, >=4.352 CUDA cores UNA GPU, >=31 GiB RAM, >=11.264 MiB VRAM. En la instantánea actual `gr6.8xlarge` resultó más barata en us-west-2c a 0,4929 USD/h; **no reutilizar ese número para lanzar en el futuro**.
+
+
+## Registros y conservación de la nueva CI SSM
+
+El workflow de EC2 [aws-gpu-ci.yml](../.github/workflows/aws-gpu-ci.yml) registra por etapa stdout, stderr, SSM CommandId y resultado; los imprime en consola de GitHub Actions y publica archivos con upload-artifact incluso tras fallo (90 días solicitados, sujetos al plan). S3 cifra las copias de las fases y caduca a los 7 días; CloudWatch conserva los logs SSM otros 7 días. La instancia se termina con try/finally, cleanup always y Lambda TTL independiente. Manual y requisitos: [docs/aws-gpu-ci.md](aws-gpu-ci.md).

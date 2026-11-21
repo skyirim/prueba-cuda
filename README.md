@@ -147,3 +147,18 @@ El hallazgo P1 de [PR #3](https://github.com/skyirim/prueba-cuda/pull/3#discussi
 ### Separación de permisos para revisiones de forks
 
 El workflow [Codex Review Sentinel](.github/workflows/codex-review-sentinel.yml) inspecciona las revisiones con un token **de solo lectura** y publica un fallo de check si existen pendientes. Un segundo workflow [Codex Review Issue Sync](.github/workflows/codex-review-issue-sync.yml), activado mediante `workflow_run`, vuelve a auditar desde código confiable de `main` y sincroniza GitHub Issues con permisos de escritura. No ejecuta código de forks ni consume sus artefactos; los comentarios de commits se detectan en el barrido diario y la auditoría general.
+
+
+## 11. GitHub Actions: compilación y ejecución C/CUDA sobre EC2 GPU
+
+**Nuevo flujo preparado, aún NO activado:** [Guía completa AWS GPU CI](docs/aws-gpu-ci.md).
+
+- [Workflow](.github/workflows/aws-gpu-ci.yml): al hacer push sobre main, la ejecución GPU se activa únicamente cuando AWS_CUDA_ENABLED=true y hay AMI, hardware y pools certificados; modo manual qualify para comprobar una AMI.
+- [CloudFormation](infrastructure/cloudformation/gpu-ci-base.json): GitHub OIDC, IAM, EC2 Systems Manager, S3 cifrado, CloudWatch y Lambda watchdog de TTL.
+- [Orquestador](scripts/aws_gpu_job.py): precios AWS actuales por arranque, selección Spot, prueba física de CUDA, captación de stdout/stderr y terminación de la VM.
+- [Scripts de compilación](scripts/ci/compile.sh), [ejecución](scripts/ci/execute.sh), [inventario](scripts/ci/inventory.sh) y [preparación](scripts/ci/prepare.sh) ejecutados en EC2. Admiten programas independientes de [C](programs/c) y [CUDA](programs/cuda).
+- [Configuración de calificación](config/probe-gpu-pools.json), [tests offline](tests/test_aws_gpu_pipeline.py) y [Skill OpenCode](.opencode/skills/aws-cuda-ci/SKILL.md).
+
+Las salidas de cada etapa se imprimen en GitHub Actions y se publican como artefactos incluso al fallar, con retención solicitada de 90 días (sujeta al plan GitHub). AWS S3 y CloudWatch proporcionan una copia temporal de 7 días.
+
+**Distinción:** en esta modalidad la EC2 ejecuta comandos vía SSM, controlados por un runner GitHub-hosted, pero no se registra todavía como runner self-hosted nativo. No se han validado aún las ejecuciones de GPU en AWS/UCAM. El archivo hardware-base.json sigue en estado DRAFT y los pools aprobados están vacíos; el proceso automático queda bloqueado hasta completar los requisitos y activar las variables.
