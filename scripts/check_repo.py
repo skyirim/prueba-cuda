@@ -59,6 +59,17 @@ def main() -> int:
                 errors.append("Estado baseline no reconocido")
             elif status != "VERIFIED":
                 print("BLOQUEO DOCUMENTADO: equipo base sin certificacion completa.")
+            else:
+                inventory_file = ROOT / "evidence/validated-inventory.json"
+                if not inventory_file.is_file():
+                    errors.append("Estado VERIFIED sin evidence/validated-inventory.json.")
+                else:
+                    try:
+                        from check_baseline import validate
+                        inv = json.loads(inventory_file.read_text(encoding="utf-8"))
+                        errors.extend(validate(data, inv))
+                    except (OSError, ValueError) as exc:
+                        errors.append("Inventario certificado no legible: " + str(exc))
         except (ValueError, UnicodeError):
             pass
 
