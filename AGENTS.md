@@ -57,3 +57,7 @@ Cada push: validar formato/presencia y consistencia de documentación con CI bar
 5. Si no es técnicamente posible corregirla, abrir o mantener una incidencia con motivo y bloqueo, y no declarar el hallazgo resuelto. Si la observación es incorrecta, justificarlo con evidencias al revisor antes de resolverla.
 6. Los agentes OpenCode deben usar la Skill codex-review-loop y la guía docs/codex-review-loop.md. El workflow de vigilancia detecta y da visibilidad a incidencias, pero **no modifica código automáticamente**. No fusionar PRs con hallazgos Codex pendientes.
 7. Cuando estén disponibles reglas de protección de ramas, exigir el check de auditoría de revisiones como condición de fusión. La falta de permisos para configurar protección se declara como pendiente, no como requisito ya aplicado.
+
+### CODEX-REVIEW-12 — separación de privilegios
+
+**Prohibido escribir GitHub Issues desde eventos `pull_request_review` o `pull_request_review_comment`**: los PR externos pueden recibir un GITHUB_TOKEN de solo lectura. La auditoría de esos eventos debe limitarse a lecturas y devolver check fallido cuando existan observaciones. La creación/cierre de incidencias se realiza únicamente en `codex-review-issue-sync.yml`, workflow independiente `workflow_run` que vuelve a consultar la API usando exclusivamente scripts de `main` (nunca ejecutando código, comandos ni artefactos de PR de terceros). Mantener pruebas de regresión que garanticen la separación de permisos.

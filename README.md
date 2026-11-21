@@ -143,3 +143,7 @@ La regla **CODEX-REVIEW-12** de [AGENTS.md](AGENTS.md) obliga a analizar y trata
 Se documenta en [docs/codex-review-loop.md](docs/codex-review-loop.md) y en la [Skill OpenCode](.opencode/skills/codex-review-loop/SKILL.md). El control automatizado [Codex Review Sentinel](.github/workflows/codex-review-sentinel.yml) inspecciona discusiones y hace visibles las pendientes; no escribe soluciones por sí solo.
 
 El hallazgo P1 de [PR #3](https://github.com/skyirim/prueba-cuda/pull/3#discussion_r4653362446) detectó la falta de PTX forward-compatible con A10G sm_86 y otras GPU. El Makefile pasa a conservar código sm_75 y PTX compute_75; los tests previenen esta regresión. Pendiente validar ejecución física GPU en las instancias aprobadas.
+
+### Separación de permisos para revisiones de forks
+
+El workflow [Codex Review Sentinel](.github/workflows/codex-review-sentinel.yml) inspecciona las revisiones con un token **de solo lectura** y publica un fallo de check si existen pendientes. Un segundo workflow [Codex Review Issue Sync](.github/workflows/codex-review-issue-sync.yml), activado mediante `workflow_run`, vuelve a auditar desde código confiable de `main` y sincroniza GitHub Issues con permisos de escritura. No ejecuta código de forks ni consume sus artefactos; los comentarios de commits se detectan en el barrido diario y la auditoría general.

@@ -14,3 +14,7 @@ Leer README.md, AGENTS.md (CODEX-REVIEW-12) y docs/codex-review-loop.md.
 5. Solicitar nueva revisión si procede; inspeccionar comentarios originales y nuevos. Repetir hasta cero hallazgos.
 6. Mantener incidencia abierta si no es posible corregir y documentar bloqueo; no simular éxito.
 7. Consultar workflow Codex Review Sentinel y nunca saltarse fallos ni procesar código no fiable desde una ejecución privilegiada.
+
+## Privilegios de GitHub Actions
+
+En PR de forks, las revisiones deben inspeccionarse con token read-only; no sincronizar incidencias desde ese evento. El workflow con permisos issues:write debe ser exclusivamente el de workflow_run con checkout de main confiable y auditoría fresca; nunca cargar código, comandos o artifacts aportados por el PR externo.
