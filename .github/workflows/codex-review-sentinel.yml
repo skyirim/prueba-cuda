@@ -18,7 +18,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
-  issues: write
+  issues: read
 
 concurrency:
   group: codex-review-sentinel-${{ github.repository }}
@@ -40,8 +40,5 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           CODEX_AUDIT_OUTPUT: codex-review-audit.json
         run: python3 scripts/audit_codex_reviews.py
-      - name: Registrar pendientes en GitHub Issues
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          CODEX_AUDIT_OUTPUT: codex-review-audit.json
-        run: python3 scripts/sync_codex_review_issues.py
+      - name: Fallar si quedan observaciones pendientes
+        run: python3 scripts/check_codex_review_result.py
