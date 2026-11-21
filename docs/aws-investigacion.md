@@ -77,3 +77,24 @@ Parsear terms.OnDemand con priceDimensions y unidad Hrs, no el primer SKU sin co
 - https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/price-changes.html
 
 **Todos los importes se deben volver a consultar antes de utilizar esta tabla como presupuesto o de lanzar una instancia.**
+
+
+## 6. Revisión tras recibir el equipo UCAM (21-11-2026)
+
+El archivo fuente acreditó 12 cores CPU físicos, >=4.352 CUDA cores en una GPU NVIDIA, RAM >=31 GiB, VRAM >=11.264 MiB y compatibilidad de fuente Linux C/CUDA con GPU Turing sm_75. Este dato **invalida** g6f.large, g6f.xlarge, g5g.xlarge, g4dn.xlarge, g6.xlarge y g5.xlarge como máquinas equivalentes (núcleos CPU o GPU insuficientes). **Las tablas baratas anteriores siguen como histórico, no selección elegible.**
+
+| EC2 | Cores físicos CPU | GPU NVIDIA completa, CUDA cores | RAM GiB | Spot USD/h observado | AZ | On-Demand USD/h |
+| --- | ---: | --- | ---: | ---: | --- | ---: |
+| **gr6.8xlarge** | **16** (32 vCPU, SMT2) | L4, **7.424**, 22.888 MiB VRAM | 256 | **0,4929** | us-west-2c | 2,4464 |
+| g7.4xlarge | 16 (16 vCPU, 1 hilo/core) | RTX PRO 4500, 10.496, 32 GiB VRAM | 64 | 0,7658 | us-west-2c | 3,0421 |
+| g6.8xlarge | 16 (32 vCPU, SMT2) | L4, 7.424, 22.888 MiB VRAM | 128 | 0,8391 | us-west-2a | 2,0144 |
+| g5.8xlarge | 16 (32 vCPU, SMT2) | A10G, 9.216, 22.888 MiB VRAM | 128 | 0,8438 | us-west-2a | 2,4480 |
+| g6e.8xlarge | 16 (32 vCPU, SMT2) | L40S, 18.176, 45.776 MiB VRAM | 256 | 1,9896 | us-west-2a | 4,52856 |
+
+El inventario EC2 es procedente de DescribeInstanceTypes, con `VCpuInfo.DefaultCores` y `VCpuInfo.DefaultThreadsPerCore` (no inferir los cores dividiendo sin comprobar). Número de CUDA cores contrastado con documentación NVIDIA/AWS. Estas instancias cumplen **mínimos numéricos catalogados**, pero aún requieren AMI Ubuntu o Linux compatible y **ensayos CUDA en AWS y UCAM**.
+
+No exigir que GPU AWS tenga >=68 SM: L4 tiene 58 SM y 7.424 CUDA cores; es mayor en núcleos CUDA pese a tener menos SM. `sm_min` del JSON es informativo mientras `require_sm_parity=false`.
+
+Cotizaciones adicionales observadas: `g7.4xlarge` us-east-1a 0,4620 USD/h y `g6.8xlarge` sa-east-1b 0,3511 USD/h; regiones con **cuota Spot G/VT cero** en esta cuenta al consultar, y por tanto no elegibles sin ampliación.
+
+**Nueva regla de producción:** ver [docs/precio-en-arranque.md](docs/precio-en-arranque.md). Antes de **cada RunInstances** consultar de nuevo la tarifa actual de TODAS las ofertas técnicamente válidas y autorizadas; NO tomar jamás los valores de esta tabla como decisión de lanzamiento.

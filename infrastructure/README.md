@@ -1,6 +1,6 @@
 # Infraestructura AWS — estado NO DESPLEGADA
 
-El repositorio documenta una arquitectura reproducible, pero **no contiene Terraform aplicable** porque falta la ficha técnica del equipo base. Ninguna EC2, volumen, GitHub App, OIDC, webhook o permiso se ha creado en esta fase. No ejecutar scripts de aprovisionamiento improvisados.
+El repositorio documenta una arquitectura reproducible, pero **no contiene Terraform aplicable** porque falta ejecutar y certificar los programas C/CUDA en el servidor UCAM y en una AMI AWS validada, y no se ha desplegado todavía el controlador. Ninguna EC2, volumen, GitHub App, OIDC, webhook o permiso se ha creado en esta fase. No ejecutar scripts de aprovisionamiento improvisados.
 
 ## Componentes planificados (Terraform/Packer u herramienta equivalente)
 
@@ -14,7 +14,7 @@ El repositorio documenta una arquitectura reproducible, pero **no contiene Terra
 
 ## Criterios para crear los ficheros IaC
 
-1. Transcribir equipo base de fuente original; completar config/hardware-base.json.
+1. Equipo base transcrito desde archivo UCAM recibido: >=12 cores CPU físicos y >=4.352 CUDA cores. Completar medidas y pruebas reales UCAM/AWS y certificar config/hardware-base.json.
 2. Medir y verificar si G6f (fraccionada) cumple sus cores o seleccionar GPU completa que cumpla.
 3. Elegir e instalar AMI validada; guardar ID y receta reproducible con hashes.
 4. Generar Terraform pinneando módulos y proveedores; adjuntar terraform fmt/validate/plan en PR.
@@ -23,3 +23,8 @@ El repositorio documenta una arquitectura reproducible, pero **no contiene Terra
 7. Para rollback, desactivar webhook, detener/controlar solicitudes, destruir EC2/EBS y revisar consumo residual.
 
 Guías relacionadas: docs/arquitectura.md, docs/seguridad.md, docs/implementacion.md y docs/operacion.md.
+
+
+## Selección de precio por instancia
+
+El código [select_gpu_spot.py](select_gpu_spot.py) implementa un **selector Spot de solo lectura** para AMIs/pools certificados. La lista de pools en [config/approved-gpu-pools.json](../config/approved-gpu-pools.json) está vacía: no es correcto activarla antes de pruebas CUDA en UCAM y AWS. En el futuro, el controlador de arranque deberá llamar al selector AWS justo antes de **cada** RunInstances y comprobar TTL máximo 60 s. Ningún despliegue debe saltarse el filtro de CPU físicos>=12, CUDA cores>=4.352, RAM>=31 GiB y VRAM>=11.264 MiB. [Proceso detallado](../docs/precio-en-arranque.md).

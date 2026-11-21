@@ -4,7 +4,7 @@
 
 Este repositorio es la fuente de verdad para investigar, dimensionar, construir, ejecutar y mantener un entorno de desarrollo Linux para **C y NVIDIA CUDA** accesible remotamente y utilizable como runner efímero de GitHub Actions. Prioridad: **compatibilidad con la máquina base, comprobación real de los recursos y coste total mínimo por ejecución**.
 
-> **Bloqueo deliberado:** el usuario alude a un fichero adjunto que describe el equipo base, pero no se recibió ningún fichero en la conversación del 21-11-2026. NO se conoce el número mínimo de núcleos físicos CPU, multiprocesadores GPU (SM), CUDA cores efectivos, memoria, arquitectura, compute capability ni versiones exigidas por ese equipo. Está prohibido presentar equivalencia o compatibilidad garantizada hasta aportar el documento, transcribirlo en [docs/hardware-base.md](docs/hardware-base.md) y superar los ensayos descritos allí. Ninguna tarifa barata sustituye esta comprobación.
+> **Fuente UCAM recibida el 21-11-2026:** servidor Ubuntu 22.04.5 x86-64, **12 cores CPU físicos, 31 GiB RAM, una NVIDIA RTX 2080 Ti con 4.352 CUDA cores, 68 SM, 11.264 MiB de VRAM y Compute Capability 7.5**. La fuente y su SHA-256 figuran en [docs/hardware-base.md](docs/hardware-base.md). No se han ejecutado aún tests CUDA en UCAM y AWS; **el equipo equivalente todavía NO está certificado**.
 
 ## 1. Requisitos del proyecto
 
@@ -65,7 +65,7 @@ Se requiere separación entre entorno interactivo SSH y runner CI. El controlado
 
 ## 5. Índice documental y guías para agentes
 
-- [docs/hardware-base.md](docs/hardware-base.md): ficha del equipo objetivo, elementos desconocidos y procedimiento de importación del adjunto.
+- [docs/hardware-base.md](docs/hardware-base.md): transcripción técnica del servidor UCAM y sus 12 cores CPU / 4.352 CUDA cores GPU, con SHA-256 y datos pendientes.
 - [docs/compatibilidad.md](docs/compatibilidad.md): reglas para demostrar equivalencia CPU y GPU, compatibilidad de binarios, CUDA y regresiones.
 - [docs/aws-investigacion.md](docs/aws-investigacion.md): consulta reproducible EC2, precios, cuotas, regiones, método y hallazgos con fecha.
 - [docs/arquitectura.md](docs/arquitectura.md): autoscaling GitHub/AWS, acceso SSH, amenaza, cierre y operación.
@@ -104,8 +104,8 @@ Se requiere separación entre entorno interactivo SSH y runner CI. El controlado
 | Hito | Estado |
 | --- | --- |
 | Investigación EC2 NVIDIA Spot/On-Demand en varias regiones | Referencia fechada; **renovar antes del despliegue** |
-| Descripción íntegra del equipo base | **BLOQUEADO: adjunto no disponible** |
-| Criterios de cores CPU/GPU y equivalencia cuantitativa | Definidos; valores mínimos **pendientes** |
+| Ficha técnica del equipo base | **DOCUMENTADA** a partir del TXT UCAM, con identificación y hash |
+| Mínimos de cores CPU/GPU | **12 cores físicos CPU, 4.352 CUDA cores GPU**; AWS aún sin ensayo real |
 | Imagen Linux CUDA con controladores probados | No construida |
 | AWS GitHub runner efímero, SSH, logs, limpieza y presupuesto | Documentado; no desplegado |
 | Tests C/CUDA ejecutados en base y AWS | No ejecutados |
@@ -116,7 +116,22 @@ Se requiere separación entre entorno interactivo SSH y runner CI. El controlado
 
 ## 8. Vigilancia permanente (sin gasto AWS)
 
-- La Action [.github/workflows/maintenance.yml](.github/workflows/maintenance.yml) programa una **auditoría mensual**: comprueba si falta la ficha base y si los datos de [config/research-snapshot.json](config/research-snapshot.json) tienen más de 30 días; publica un resumen y crea una incidencia GitHub sin duplicarla si existe un aviso. No consulta tarifas en AWS de forma automática ni consume instancias.
+- La Action [.github/workflows/maintenance.yml](.github/workflows/maintenance.yml) programa una **auditoría mensual**: comprueba si falta verificar la equivalencia y si los datos de [config/research-snapshot.json](config/research-snapshot.json) tienen más de 30 días; publica un resumen y crea una incidencia GitHub sin duplicarla si existe un aviso. No consulta tarifas en AWS de forma automática ni consume instancias.
 - [scripts/audit_maintenance.py](scripts/audit_maintenance.py) implementa el control temporal y el bloqueo de baseline. [docs/plan-pruebas.md](docs/plan-pruebas.md) define las pruebas de aceptación; [docs/registro.md](docs/registro.md) conserva el histórico.
 - [infrastructure/README.md](infrastructure/README.md) explica el estado del IaC: **todavía no desplegado**. Activar recursos de pago requiere equivalencia comprobada, AMI y presupuesto aprobado.
 - Los agentes OpenCode deben analizar las incidencias abiertas y proponer PRs con datos, fuentes y pruebas, no fingir que se corrigieron automáticamente.
+
+
+## 9. REGLA PERMANENTE: elegir precio AWS en el instante de CADA arranque
+
+> **Obligatorio para cualquier nueva EC2 GPU, tanto SSH como GitHub Actions:** el controlador debe realizar una consulta fresca y directa a la API **`DescribeSpotPriceHistory` y a Service Quotas inmediatamente antes de cada `RunInstances`**. Está **prohibido** utilizar para decidir la tarifa de un TXT, un README, una tabla del día anterior o una caché persistente. Si el plan tiene más de 60 segundos, **repetir** la consulta. Si la API falla, **no lanzar**.
+
+**Primero el hardware, después el precio:** seleccionar solo máquinas que demuestren >=12 cores físicos CPU, >=4.352 CUDA cores GPU en **una GPU completa**, >=31 GiB de RAM y >=11.264 MiB de VRAM utilizable, con Linux, drivers y CUDA compilables/ejecutables para el propio hardware y para la **RTX 2080 Ti `sm_75`**. Los 68 SM de la referencia se registran, pero **no** equivalen a 4.352 cores de una microarquitectura distinta y **no** constituyen un mínimo separado.
+
+1. Recuperar catálogo AWS actual `DescribeInstanceTypes`, perfiles aprobados de AMI/driver/CUDA, regiones y AZ autorizadas, cuota vCPU Spot suficiente y subredes.
+2. Rechazar cualquier tipo con CPU/GPU/RAM/VRAM insuficiente, fracción GPU no demostrada, GPU desconocida, incompatibilidad software, cuota insuficiente o AMI no certificada.
+3. En cada región/AZ elegible consultar el precio Spot **último por pareja tipo/zona** (y On-Demand sólo si se permite explícitamente), calcular coste total previsible, ordenar ofertas válidas por tarifa real y elegir la menor a la que pueda acceder la cuenta.
+4. Registrar hora UTC, respuesta de AWS, región, zona, tipo, tarifa USD/h, perfil y AMI; justo antes de `RunInstances` comprobar vigencia del plan (TTL máximo 60 segundos). Una instancia Spot **puede carecer de capacidad aunque sea la más barata**: probar la siguiente oferta aprobada, con nueva consulta; nunca degradar requisitos.
+5. Terminar la instancia al finalizar el trabajo; registrar tiempo y coste real. El selector inicial está en [infrastructure/select_gpu_spot.py](infrastructure/select_gpu_spot.py), con pruebas [tests/test_spot_selector.py](tests/test_spot_selector.py) y procedimiento [docs/precio-en-arranque.md](docs/precio-en-arranque.md). **El despliegue AWS sigue pendiente**: el selector es un módulo de decisión, no un controlador de instancias ya instalado.
+
+La tarifa **0,4929 USD/h de `gr6.8xlarge` en Oregón** fue la menor Spot observada hoy entre las opciones numéricamente adecuadas con cuota regional. **No es un precio que deba utilizarse en futuros lanzamientos sin volver a consultar AWS.** Más detalles en [docs/aws-investigacion.md](docs/aws-investigacion.md) y [ADR-0002](docs/decisiones/0002-tarifa-tiempo-real.md).

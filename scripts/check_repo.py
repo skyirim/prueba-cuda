@@ -20,7 +20,10 @@ REQUIRED = [
     ".github/workflows/docs-check.yml", ".github/workflows/maintenance.yml",
     "templates/cuda-gpu-workflow.yml", "scripts/audit_maintenance.py",
     "config/research-snapshot.json", "docs/plan-pruebas.md", "docs/registro.md",
-    "infrastructure/README.md",
+    "infrastructure/README.md", "infrastructure/select_gpu_spot.py",
+    "config/approved-gpu-pools.json", "docs/precio-en-arranque.md",
+    "docs/decisiones/0002-tarifa-tiempo-real.md",
+    "tests/test_spot_selector.py",
     ".opencode/skills/cuda-equivalencia/SKILL.md",
     ".opencode/skills/aws-spot-gpu/SKILL.md",
     ".opencode/skills/runner-efimero/SKILL.md",
@@ -33,7 +36,8 @@ def main() -> int:
             errors.append("Falta archivo requerido: " + rel)
     for rel in ["config/hardware-base.json",
                 "config/hardware-base.schema.json",
-                "config/inventory-template.json", "opencode.json"]:
+                "config/inventory-template.json", "config/approved-gpu-pools.json",
+                "config/research-snapshot.json", "opencode.json"]:
         if (ROOT / rel).exists():
             try:
                 json.loads((ROOT / rel).read_text(encoding="utf-8"))

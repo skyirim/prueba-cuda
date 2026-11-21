@@ -1,0 +1,5 @@
+{
+  "status": "NOT_CONFIGURED",
+  "note": "No se han validado AMIs ni programas CUDA en UCAM y AWS. Un controlador deberá obtener/crear pools aprobados; no rellenar approved=true sin evidencias reales.",
+  "pools": []
+}

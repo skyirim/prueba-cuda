@@ -48,3 +48,10 @@ En pérdida de capacidad GPU: registrar Spot unavailable/insufficient capacity, 
 ## Revisión periódica
 
 Mensualmente o con cambios de proveedor: cotizaciones Spot, cuotas por región, driver GRID, toolkit CUDA, versiones de acciones GitHub, AMI seguridad y eficiencia. Crear PR con datos fechados, comparar con último estado y evidencias; no actualizar comportamiento automáticamente sin pruebas.
+
+
+## Selección obligatoria por arranque (revisión 2026-11-21)
+
+El monitor mensual sirve para alertar de documentación/precios envejecidos; **no** reemplaza consultar AWS antes de **cada nueva instancia**. La selección para un arranque debe registrar hora UTC (con segundos), tipos y AZ comparados, precios Spot realmente consultados, cuotas, AMI aprobada, cores CPU/GPU, coste total previsto, motivo de elección, alternativas rechazadas y límite TTL 60 s. Si el controlador no puede obtener cotización actual, debe fallar sin arrancar; si Spot resulta unavailable, refrescar y probar siguiente oferta compatible, o informar al usuario.
+
+Para el inventario UCAM vigente: >=12 cores CPU físicos, >=4.352 CUDA cores UNA GPU, >=31 GiB RAM, >=11.264 MiB VRAM. En la instantánea actual `gr6.8xlarge` resultó más barata en us-west-2c a 0,4929 USD/h; **no reutilizar ese número para lanzar en el futuro**.

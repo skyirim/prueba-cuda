@@ -33,5 +33,15 @@
   "maximum_age_days": 30,
   "verified_gpu_cuda_runtime": false,
   "actual_aws_resources_created": false,
-  "note": "Valores históricos observados; no predicen precio futuro ni capacidad Spot."
+  "note": "ARCHIVO HISTORICO exclusivamente. NO utilizar estos precios para lanzar EC2. Reconsultar AWS antes de cada RunInstances.",
+  "baseline_source_sha256": "07a5105d27c18ffd3caa464054885187d93a65b0240d4804d0efae910c349f8f",
+  "baseline_cpu_physical_cores_min": 12,
+  "baseline_gpu_cuda_cores_min": 4352,
+  "eligible_numeric_spot_observed_usd_h": {
+    "gr6.8xlarge": 0.4929,
+    "g7.4xlarge": 0.7658,
+    "g6.8xlarge": 0.8391,
+    "g5.8xlarge": 0.8438,
+    "g6e.8xlarge": 1.9896
+  }
 }

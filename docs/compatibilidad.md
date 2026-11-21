@@ -45,3 +45,14 @@ Comandos de inventario: lscpu; nproc; free -h; uname -m; gcc --version; nvcc --v
 Garantizar que **fuentes** C/CUDA correctamente portadas compilan y pasan pruebas en las dos plataformas solo después de ejecutar y comprobarlas. No garantizar que cualquier programa arbitrario vaya a ser portable; uso de ensamblador específico, intrínsecos, APIs/flags no compatibles, límites de recursos o comportamiento indefinido pueden impedirlo. Ante una incompatibilidad, modificar la fuente con solución portátil y test de regresión sin falsear la referencia.
 
 Referencias: https://docs.nvidia.com/cuda/cuda-programming-guide/ ; https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html ; https://docs.aws.amazon.com/ec2/latest/instancetypes/ac.html
+
+
+## 6. Requisito UCAM concreto desde 21-11-2026
+
+El hardware base está documentado: **12 CPU físicos, una GPU RTX 2080 Ti con 4.352 núcleos CUDA, 68 SM informativos, 11.264 MiB VRAM, CC 7.5, RAM 31 GiB, x86-64 Ubuntu 22.04.5**. El log del driver 535.288.01 indica CUDA 12.2 soportado por driver, **no** prueba el `nvcc` instalado.
+
+- Capacidad numérica exigida: >=12 cores físicos (no 12 vCPU), >=4.352 CUDA cores en 1 GPU completa, >=11.264 MiB VRAM, >=31 GiB RAM. La GPU L4 tiene 58 SM pero 7.424 CUDA cores, por lo que **cumple el mínimo de cores GPU**.
+- La portabilidad exigida es de **fuentes C/CUDA**: compilar y ejecutar en AMD/Intel x86-64 AWS y en Xeon + RTX 2080 Ti de UCAM. Para GPU UCAM generar `sm_75`, para NVIDIA L4 generar `sm_89`; si se utiliza G7 Blackwell, elegir una versión CUDA con soporte de su compute capability.
+- Requisitos adicionales: no introducir intrínsecos CPU exclusivos no presentes en Xeon E5-2603 v4 ni APIs/instrucciones CUDA exclusivas de Ampere/Ada/Blackwell sin ruta portable a Turing; comparar resultados con tolerancia cuando haya punto flotante.
+- Para pruebas reales del servidor UCAM sigue faltando `nvcc --version` y ejecutar los programas allí. **No se ha certificado todavía ejecución cruzada**.
+- Modificado el gate: los 68 SM se documentan como propiedad de referencia, pero `require_sm_parity=false` NO los convierte en requisito separado; el número de CUDA cores sí es un mínimo.
