@@ -11,8 +11,6 @@ on:
     types: [created, edited]
   issue_comment:
     types: [created, edited]
-  commit_comment:
-    types: [created]
   schedule:
     - cron: '17 6 * * *'
   workflow_dispatch: {}
