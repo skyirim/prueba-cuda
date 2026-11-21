@@ -28,3 +28,8 @@ Guías relacionadas: docs/arquitectura.md, docs/seguridad.md, docs/implementacio
 ## Selección de precio por instancia
 
 El código [select_gpu_spot.py](select_gpu_spot.py) implementa un **selector Spot de solo lectura** para AMIs/pools certificados. La lista de pools en [config/approved-gpu-pools.json](../config/approved-gpu-pools.json) está vacía: no es correcto activarla antes de pruebas CUDA en UCAM y AWS. En el futuro, el controlador de arranque deberá llamar al selector AWS justo antes de **cada** RunInstances y comprobar TTL máximo 60 s. Ningún despliegue debe saltarse el filtro de CPU físicos>=12, CUDA cores>=4.352, RAM>=31 GiB y VRAM>=11.264 MiB. [Proceso detallado](../docs/precio-en-arranque.md).
+
+
+## Estado real de AWS (21-11-2026)
+
+La plantilla CloudFormation de base **sí** está desplegada (prueba-cuda-ci, CREATE_COMPLETE, us-west-2). No existen EC2 GPU activas. Un intento de calificación con RunInstances devolvió error Blocked: AWS considera la cuenta no validada. Los scripts CI y las reglas siguen preparados pero inactivos hasta desbloqueo, configuración de variables GitHub y pruebas reales. [Seguimiento #7](https://github.com/skyirim/prueba-cuda/issues/7). Los apartados históricos anteriores de este documento reflejan el estado previo al despliegue.

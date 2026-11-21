@@ -72,3 +72,14 @@ Cada push: validar formato/presencia y consistencia de documentación con CI bar
 5. Terminar instancias en finally y en paso always; watchdog EventBridge/Lambda como protección independiente, y EBS DeleteOnTermination. Almacenar logs en GitHub con retención solicitada de 90 días, sujeto a límites del plan.
 6. No declarar desplegada ni probada la infraestructura hasta comprobar CloudFormation, configurar GitHub variables, verificar OIDC y ejecutar tests C/CUDA reales. Aplicar CODEX-REVIEW-12 antes de fusionar.
 7. Leer [Guía operativa](docs/aws-gpu-ci.md) y [Skill OpenCode](.opencode/skills/aws-cuda-ci/SKILL.md) antes de cambiar scripts, IAM, workflow o guardas de gasto.
+
+
+## AWS-ACCOUNT-14 — bloquear intentos mientras AWS rechace RunInstances
+
+El 21/11/2026 la pila prueba-cuda-ci se desplegó con estado CREATE_COMPLETE, pero una petición EC2 RunInstances para calificar gr6.8xlarge devolvió error Blocked por estado/verificación de la cuenta. [Incidencia #7](https://github.com/skyirim/prueba-cuda/issues/7).
+
+- No repetir lanzamientos GPU, ni con otra tarifa/familia/región, ni activar GitHub push para sortear el bloqueo. Se necesita resolución de AWS Support.
+- Mantener el perfil UCAM en DRAFT y los pools CI sin aprobar, y las variables AWS_CUDA_ENABLED / AWS_CUDA_PROBE_ENABLED desactivadas.
+- Guardar evidencia de que CloudFormation está CREATE_COMPLETE y que no hay EC2 activas; no afirmar que se ha ejecutado GCC/nvcc o kernels.
+- Tras el desbloqueo, comprobar otra vez las cuotas, tarifas Spot en el preciso instante de cada arranque, roles y AMI; luego calificación manual con techo y TTL, logs y comparación real UCAM.
+- No escribir datos de cuenta sensibles en README, PRs, Issues ni logs. Exigir CODEX-REVIEW-12 al modificar infraestructura.
