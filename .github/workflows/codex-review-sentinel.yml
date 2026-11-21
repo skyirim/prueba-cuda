@@ -3,10 +3,10 @@ name: Codex Review Sentinel
 on:
   push:
     branches: [main]
-  pull_request_review:
-    types: [submitted]
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
   pull_request_review_comment:
     types: [created, edited]
   issue_comment:
@@ -15,8 +15,33 @@ on:
     - cron: '17 6 * * *'
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+concurrency:
+  group: codex-review-sentinel-${{ github.repository }}
+  cancel-in-progress: false
+
 jobs:
   audit-codex-reviews:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - run: echo 'Estructura valida'
+      - name: Usar codigo confiable de la rama principal
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Examinar revisiones, hilos y comentarios de commits
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          CODEX_AUDIT_OUTPUT: codex-review-audit.json
+        run: python3 scripts/audit_codex_reviews.py
+      - name: Registrar pendientes en GitHub Issues
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CODEX_AUDIT_OUTPUT: codex-review-audit.json
+        run: python3 scripts/sync_codex_review_issues.py
